@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-#cd ../../../../../../
-#
-#ROOT=${PWD}
-#
-#MODULE_NAME=ru.ifmo.rain.dolzhanskii.implementor
-#
-#REQ_PATH=${ROOT}/lib:${ROOT}/artifacts
-#
-#SRC_NAME=info.kgeorgiy.java.advanced.implementor
-
 cd ../../../../../../../
 
 ROOT=${PWD}
