@@ -1,0 +1,5 @@
+_build/
+_javadoc/
+_implementor.jar
+*.md
+*.iml
