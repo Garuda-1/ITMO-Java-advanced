@@ -45,7 +45,6 @@ public class IterativeParallelism implements AdvancedIP {
         List<B> batchResults = new ArrayList<>(Collections.nCopies(threads, null));
         List<InterruptedException> batchExceptions = new ArrayList<>();
         List<Thread> workers = new ArrayList<>();
-        InterruptedException exception = new InterruptedException("Some threads were interrupted");
 
         for (int index = 0; index < threads; index++) {
             final int threadIndex = index;
@@ -55,16 +54,17 @@ public class IterativeParallelism implements AdvancedIP {
             thread.start();
         }
 
-        workers.forEach(thread -> {
+        for (int index = 0; index < threads; index++) {
             try {
-                thread.join();
+                workers.get(index).join();
             } catch (InterruptedException e) {
+                InterruptedException exception = new InterruptedException("Some threads were interrupted");
                 exception.addSuppressed(e);
+                for (int termIndex = index + 1; termIndex < threads; termIndex++) {
+                    workers.get(termIndex).interrupt();
+                }
+                throw exception;
             }
-        });
-
-        if (exception.getSuppressed().length != 0) {
-            throw exception;
         }
 
         return reduceFunction.apply(batchResults.stream());
