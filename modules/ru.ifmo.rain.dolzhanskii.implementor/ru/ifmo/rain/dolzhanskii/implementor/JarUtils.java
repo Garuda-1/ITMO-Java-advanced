@@ -78,7 +78,7 @@ class JarUtils {
         String[] compilerArgs = {
                 "-cp",
                 tmpDir.toString() + File.pathSeparator + superPath.toString(),
-                tmpDir.resolve(getImplementationPath(token) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
+                tmpDir.resolve(getImplementationPath(token, File.separator) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
         };
 
         int returnCode = javaCompiler.run(null, null, null, compilerArgs);
@@ -101,7 +101,7 @@ class JarUtils {
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
 
         try (JarOutputStream stream = new JarOutputStream(Files.newOutputStream(targetPath), manifest)) {
-            String implementationPath = getImplementationPath(token) + IMPL_SUFFIX + CLASS_EXTENSION;
+            String implementationPath = getImplementationPath(token, "/") + IMPL_SUFFIX + CLASS_EXTENSION;
             stream.putNextEntry(new ZipEntry(implementationPath));
             Files.copy(Path.of(tmpDir.toString(), implementationPath), stream);
         } catch (IOException e) {

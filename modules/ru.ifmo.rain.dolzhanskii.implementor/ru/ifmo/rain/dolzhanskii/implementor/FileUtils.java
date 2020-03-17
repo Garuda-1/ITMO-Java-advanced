@@ -48,9 +48,9 @@ class FileUtils {
      * @param token {@link Class} which implementation is required
      * @return Path to source code as {@link String}
      */
-    static String getImplementationPath(Class<?> token) {
-        return String.join(File.separator, token.getPackageName().split("\\.")) +
-                File.separator +
+    static String getImplementationPath(Class<?> token, String separator) {
+        return String.join(separator, token.getPackageName().split("\\.")) +
+                separator +
                 token.getSimpleName();
     }
 
@@ -82,12 +82,12 @@ class FileUtils {
      * @throws ImplerException In case generated path is invalid
      */
     static Path prepareSourceCodePath(Class<?> token, Path root) throws ImplerException {
-        String sourceCodePath = getImplementationPath(token) + IMPL_SUFFIX + JAVA_EXTENSION;
+        String sourceCodePath = getImplementationPath(token, File.separator) + IMPL_SUFFIX + JAVA_EXTENSION;
 
         Path path;
 
         try {
-            path = root.resolve(Paths.get(sourceCodePath));
+            path = root.resolve(Path.of(sourceCodePath));
         } catch (InvalidPathException e) {
             throw new ImplerException("Invalid path generated", e);
         }
