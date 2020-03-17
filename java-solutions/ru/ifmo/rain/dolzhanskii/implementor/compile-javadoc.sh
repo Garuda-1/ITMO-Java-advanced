@@ -17,6 +17,6 @@ REQ_PATH=${BASIC_PATH}/lib:${BASIC_PATH}/artifacts
 AUX_PATH=${BASIC_PATH}/modules/${SRC_NAME}/${SRC_PATH}
 
 javadoc -d ${SOLUTION_PATH}/_javadoc -link https://docs.oracle.com/en/java/javase/11/docs/api/ -private -version -author \
-    --module-path=${REQ_PATH} --module-source-path=${SOLUTION_PATH}/java-solutions:${BASIC_PATH}/modules \
+    --module-path=${REQ_PATH} --module-source-path=${SOLUTION_PATH}/modules:${BASIC_PATH}/modules \
     --module=${MODULE_NAME} \
     ${AUX_PATH}/Impler.java ${AUX_PATH}/JarImpler.java ${AUX_PATH}/ImplerException.java

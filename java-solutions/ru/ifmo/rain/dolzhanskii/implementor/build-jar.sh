@@ -13,7 +13,7 @@ MODULE_PATH=ru/ifmo/rain/dolzhanskii/implementor
 OUT_PATH=${SOLUTION_PATH}/_build/production/${MODULE_NAME}
 
 REQ_PATH=${BASIC_PATH}/lib:${BASIC_PATH}/artifacts
-SRC_PATH=${SOLUTION_PATH}/java-solutions/${MODULE_NAME}
+SRC_PATH=${SOLUTION_PATH}/modules/${MODULE_NAME}
 JAR_PATH=${SOLUTION_PATH}
 
 rm -rf ${OUT_PATH}
