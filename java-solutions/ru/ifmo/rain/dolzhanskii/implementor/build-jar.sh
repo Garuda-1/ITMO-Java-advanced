@@ -22,5 +22,5 @@ cd ${OUT_PATH}
 
 mkdir ${JAR_PATH} 2> /dev/null
 
-jar -c --file=${JAR_PATH}/_implementor.jar --main-class=${MODULE_NAME}.Implementor --module-path=${REQ_PATH} \
+jar -c --file=${JAR_PATH}/_implementor.jar --main-class=${MODULE_NAME}.Main --module-path=${REQ_PATH} \
     module-info.class ${MODULE_PATH}/*
