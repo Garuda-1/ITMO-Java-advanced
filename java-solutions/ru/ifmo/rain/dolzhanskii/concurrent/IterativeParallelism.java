@@ -73,6 +73,9 @@ public class IterativeParallelism implements ListIP {
         return streams.flatMap(Function.identity()).collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String join(int threads, List<?> values) throws InterruptedException {
         return runIP(threads, values,
