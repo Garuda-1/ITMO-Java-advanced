@@ -40,7 +40,6 @@ public class IterativeParallelism implements AdvancedIP {
         List<List<T>> batches = getListPerThreadDistribution(threads, list);
         threads = batches.size();
         List<B> batchResults = new ArrayList<>(Collections.nCopies(threads, null));
-        List<InterruptedException> batchExceptions = new ArrayList<>();
         List<Thread> workers = new ArrayList<>();
 
         for (int index = 0; index < threads; index++) {
@@ -51,15 +50,18 @@ public class IterativeParallelism implements AdvancedIP {
             thread.start();
         }
 
+        List<InterruptedException> batchExceptions = new ArrayList<>();
         for (Iterator<Thread> iterator = workers.iterator(); iterator.hasNext(); ) {
             try {
                 iterator.next().join();
             } catch (InterruptedException e) {
                 InterruptedException exception = new InterruptedException("Some threads were interrupted");
                 exception.addSuppressed(e);
+                // :NOTE: interrupt children
                 for (; iterator.hasNext(); ) {
                     Thread thread = iterator.next();
                     try {
+                        // :NOTE: throws interrupted exception
                         thread.join();
                     } catch (InterruptedException e1) {
                         exception.addSuppressed(e1);
@@ -144,9 +146,6 @@ public class IterativeParallelism implements AdvancedIP {
                 stream -> stream.min(comparator).orElseThrow());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> boolean all(int threads, List<? extends T> values, Predicate<? super T> predicate) throws InterruptedException {
         return runIP(threads, values,
@@ -154,9 +153,6 @@ public class IterativeParallelism implements AdvancedIP {
                 stream -> stream.allMatch(Boolean::booleanValue));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> boolean any(int threads, List<? extends T> values, Predicate<? super T> predicate) throws InterruptedException {
         return runIP(threads, values,
