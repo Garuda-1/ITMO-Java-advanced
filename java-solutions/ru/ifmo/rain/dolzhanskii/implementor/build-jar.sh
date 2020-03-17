@@ -16,11 +16,13 @@ REQ_PATH=${BASIC_PATH}/lib:${BASIC_PATH}/artifacts
 SRC_PATH=${SOLUTION_PATH}/java-solutions/${MODULE_NAME}
 JAR_PATH=${SOLUTION_PATH}
 
+rm -rf ${OUT_PATH}
+
 javac --module-path ${REQ_PATH} ${SRC_PATH}/module-info.java ${SRC_PATH}/${MODULE_PATH}/*.java -d ${OUT_PATH}
 
 cd ${OUT_PATH}
 
 mkdir ${JAR_PATH} 2> /dev/null
 
-jar -c --file=${JAR_PATH}/_implementor.jar --main-class=${MODULE_NAME}.Main --module-path=${REQ_PATH} \
+jar -c --file=${JAR_PATH}/_implementor.jar --main-class=${MODULE_NAME}.JarImplementor --module-path=${REQ_PATH} \
     module-info.class ${MODULE_PATH}/*
