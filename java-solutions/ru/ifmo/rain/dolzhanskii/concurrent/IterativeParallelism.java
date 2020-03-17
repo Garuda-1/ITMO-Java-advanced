@@ -4,10 +4,7 @@ import info.kgeorgiy.java.advanced.concurrent.AdvancedIP;
 import info.kgeorgiy.java.advanced.concurrent.ListIP;
 import info.kgeorgiy.java.advanced.concurrent.ScalarIP;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -54,14 +51,19 @@ public class IterativeParallelism implements AdvancedIP {
             thread.start();
         }
 
-        for (int index = 0; index < threads; index++) {
+        for (Iterator<Thread> iterator = workers.iterator(); iterator.hasNext(); ) {
             try {
-                workers.get(index).join();
+                iterator.next().join();
             } catch (InterruptedException e) {
                 InterruptedException exception = new InterruptedException("Some threads were interrupted");
                 exception.addSuppressed(e);
-                for (int termIndex = index + 1; termIndex < threads; termIndex++) {
-                    workers.get(termIndex).interrupt();
+                for (; iterator.hasNext(); ) {
+                    Thread thread = iterator.next();
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e1) {
+                        exception.addSuppressed(e1);
+                    }
                 }
                 throw exception;
             }
