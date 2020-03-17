@@ -1,5 +1,6 @@
 package ru.ifmo.rain.dolzhanskii.concurrent;
 
+import info.kgeorgiy.java.advanced.concurrent.AdvancedIP;
 import info.kgeorgiy.java.advanced.concurrent.ListIP;
 import info.kgeorgiy.java.advanced.concurrent.ScalarIP;
 
@@ -19,9 +20,9 @@ import java.util.stream.Stream;
  * @version 0.9
  */
 @SuppressWarnings("unused")
-public class IterativeParallelism implements ListIP {
-    private <T> List<List<? extends T>> getListPerThreadDistribution(int threads, List<? extends T> list) {
-        List<List<? extends T>> distribution = new ArrayList<>();
+public class IterativeParallelism implements AdvancedIP {
+    private <T> List<List<T>> getListPerThreadDistribution(int threads, List<T> list) {
+        List<List<T>> distribution = new ArrayList<>();
         int batchSize = list.size() / threads;
         int remainder = list.size() % threads;
 
@@ -37,9 +38,9 @@ public class IterativeParallelism implements ListIP {
         return distribution;
     }
 
-    private <T, B, R> R runIP(int threads, List<? extends T> list, Function<Stream<? extends T>, B> batchJob,
-                              Function<Stream<? extends B>, R> reduceFunction) throws InterruptedException {
-        List<List<? extends T>> batches = getListPerThreadDistribution(threads, list);
+    private <T, B, R> R runIP(int threads, List<T> list, Function<Stream<T>, B> batchJob,
+                              Function<Stream<B>, R> reduceFunction) throws InterruptedException {
+        List<List<T>> batches = getListPerThreadDistribution(threads, list);
         threads = batches.size();
         List<B> batchResults = new ArrayList<>(Collections.nCopies(threads, null));
         List<InterruptedException> batchExceptions = new ArrayList<>();
@@ -71,6 +72,24 @@ public class IterativeParallelism implements ListIP {
 
     private <T> List<T> flatCollect(Stream<? extends Stream<? extends T>> streams) {
         return streams.flatMap(Function.identity()).collect(Collectors.toList());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> T reduce(int threads, List<T> values, Monoid<T> monoid) throws InterruptedException {
+        return mapReduce(threads, values, Function.<T>identity(), monoid);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T, R> R mapReduce(int threads, List<T> values, Function<T, R> lift, Monoid<R> monoid) throws InterruptedException {
+        return runIP(threads, values,
+                stream -> stream.map(lift).reduce(monoid.getIdentity(), monoid.getOperator()),
+                stream -> stream.reduce(monoid.getIdentity(), monoid.getOperator()));
     }
 
     /**
