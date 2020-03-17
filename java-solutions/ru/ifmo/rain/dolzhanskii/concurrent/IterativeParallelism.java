@@ -57,12 +57,10 @@ public class IterativeParallelism implements AdvancedIP {
             } catch (InterruptedException e) {
                 InterruptedException exception = new InterruptedException("Some threads were interrupted");
                 exception.addSuppressed(e);
-                // :NOTE: interrupt children
                 for (; iterator.hasNext(); ) {
                     Thread thread = iterator.next();
                     thread.interrupt();
                     try {
-                        // :NOTE: throws interrupted exception
                         thread.join();
                     } catch (InterruptedException e1) {
                         exception.addSuppressed(e1);
