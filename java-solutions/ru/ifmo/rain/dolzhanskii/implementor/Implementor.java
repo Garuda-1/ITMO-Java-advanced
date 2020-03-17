@@ -60,7 +60,6 @@ public class Implementor implements Impler {
      * @throws ImplerException when implementation cannot be generated.
      *
      * @see #validateToken(Class) Token implementation support validator
-     * @see SourceCodeUtils#generateSourceCode(Class) Source code generation method
      */
     @Override
     public void implement(Class<?> token, Path root) throws ImplerException {
