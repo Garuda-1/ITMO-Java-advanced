@@ -60,6 +60,7 @@ public class IterativeParallelism implements AdvancedIP {
                 // :NOTE: interrupt children
                 for (; iterator.hasNext(); ) {
                     Thread thread = iterator.next();
+                    thread.interrupt();
                     try {
                         // :NOTE: throws interrupted exception
                         thread.join();
@@ -78,17 +79,11 @@ public class IterativeParallelism implements AdvancedIP {
         return streams.flatMap(Function.identity()).collect(Collectors.toList());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> T reduce(int threads, List<T> values, Monoid<T> monoid) throws InterruptedException {
         return mapReduce(threads, values, Function.<T>identity(), monoid);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T, R> R mapReduce(int threads, List<T> values, Function<T, R> lift, Monoid<R> monoid) throws InterruptedException {
         return runIP(threads, values,
@@ -96,9 +91,6 @@ public class IterativeParallelism implements AdvancedIP {
                 stream -> stream.reduce(monoid.getIdentity(), monoid.getOperator()));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String join(int threads, List<?> values) throws InterruptedException {
         return runIP(threads, values,
@@ -106,9 +98,6 @@ public class IterativeParallelism implements AdvancedIP {
                 stream -> stream.collect(Collectors.joining()));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> List<T> filter(int threads, List<? extends T> values, Predicate<? super T> predicate) throws InterruptedException {
         return runIP(threads, values,
@@ -116,9 +105,6 @@ public class IterativeParallelism implements AdvancedIP {
                 this::flatCollect);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T, U> List<U> map(int threads, List<? extends T> values, Function<? super T, ? extends U> f) throws InterruptedException {
         return runIP(threads, values,
@@ -126,9 +112,6 @@ public class IterativeParallelism implements AdvancedIP {
                 this::flatCollect);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> T maximum(int threads, List<? extends T> values, Comparator<? super T> comparator) throws InterruptedException {
         return runIP(threads, values,
@@ -136,9 +119,6 @@ public class IterativeParallelism implements AdvancedIP {
                 stream -> stream.max(comparator).orElseThrow());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> T minimum(int threads, List<? extends T> values, Comparator<? super T> comparator) throws InterruptedException {
         return runIP(threads, values,
