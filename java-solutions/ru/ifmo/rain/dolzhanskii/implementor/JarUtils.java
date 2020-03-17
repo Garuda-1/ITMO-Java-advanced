@@ -4,10 +4,13 @@ import info.kgeorgiy.java.advanced.implementor.ImplerException;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.security.CodeSource;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -42,22 +45,37 @@ class JarUtils {
      * @throws ImplerException In case compilation finished with non-zero return code
      */
     static void compileCode(Class<?> token, Path tmpDir) throws ImplerException {
-        String superPath;
+        Path superPath;
         try {
-            superPath = Path.of(token.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
-        } catch (URISyntaxException e) {
-            throw new ImplerException("Failed to generate valid classpath", e);
+            CodeSource codeSource = token.getProtectionDomain().getCodeSource();
+            if (codeSource == null) {
+                throw new ImplerException("Failed to retrieve super class source code");
+            }
+            URL sourceCodeUrl = codeSource.getLocation();
+            if (sourceCodeUrl == null) {
+                throw new ImplerException("Failed to retrieve super class code source location");
+            }
+            String sourceCodePath = sourceCodeUrl.getPath();
+            if (sourceCodePath.isEmpty()) {
+                throw new ImplerException("Failed to convert source code location");
+            }
+            if (sourceCodePath.startsWith("/")) {
+                sourceCodePath = sourceCodePath.substring(1);
+            }
+            superPath = Path.of(sourceCodePath);
+        } catch (InvalidPathException e) {
+            throw new ImplerException("Failed to retrieve super class source code");
         }
 
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         if (javaCompiler == null) {
-            throw new ImplerException("No compiler provided");
+            throw new ImplerException("No Java compiler provided");
         }
 
         String[] compilerArgs = {
                 "-cp",
-                superPath,
-                Path.of(tmpDir.toString(), getImplementationPath(token) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
+                tmpDir.toString() + File.pathSeparator + superPath.toString(),
+                tmpDir.resolve(getImplementationPath(token, File.separator) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
         };
 
         int returnCode = javaCompiler.run(null, null, null, compilerArgs);
@@ -80,7 +98,7 @@ class JarUtils {
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
 
         try (JarOutputStream stream = new JarOutputStream(Files.newOutputStream(targetPath), manifest)) {
-            String implementationPath = getImplementationPath(token) + IMPL_SUFFIX + CLASS_EXTENSION;
+            String implementationPath = getImplementationPath(token, "/") + IMPL_SUFFIX + CLASS_EXTENSION;
             stream.putNextEntry(new ZipEntry(implementationPath));
             Files.copy(Path.of(tmpDir.toString(), implementationPath), stream);
         } catch (IOException e) {
