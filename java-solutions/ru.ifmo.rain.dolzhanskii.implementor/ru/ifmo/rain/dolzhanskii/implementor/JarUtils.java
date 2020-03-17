@@ -6,6 +6,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -44,11 +45,10 @@ class JarUtils {
      * @throws ImplerException In case compilation finished with non-zero return code
      */
     static void compileCode(Class<?> token, Path tmpDir) throws ImplerException {
-        Path superPath;
+        String superPath;
         try {
-            CodeSource superCodeSource = token.getProtectionDomain().getCodeSource();
-            superPath = Path.of((superCodeSource == null) ? "" : superCodeSource.getLocation().getPath());
-        } catch (InvalidPathException e) {
+            superPath = Path.of(token.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        } catch (URISyntaxException e) {
             throw new ImplerException("Failed to generate valid classpath", e);
         }
 
@@ -59,7 +59,7 @@ class JarUtils {
 
         String[] compilerArgs = {
                 "-cp",
-                tmpDir.toString() + File.pathSeparator + superPath.toString(),
+                superPath,
                 Path.of(tmpDir.toString(), getImplementationPath(token) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
         };
 
