@@ -46,6 +46,7 @@ class FileUtils {
      * and name.
      *
      * @param token {@link Class} which implementation is required
+     * @param separator {@link String} to substitute as separator
      * @return Path to source code as {@link String}
      */
     static String getImplementationPath(Class<?> token, String separator) {

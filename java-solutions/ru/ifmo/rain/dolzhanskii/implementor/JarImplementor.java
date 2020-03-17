@@ -66,7 +66,7 @@ public class JarImplementor extends Implementor implements JarImpler {
      * {@link info.kgeorgiy.java.advanced.implementor.Impler#implement(Class, Path)} is invoked.
      * <p>
      * When <code>-jar</code> is used, the program runs in JarImplementation mode and
-     * {@link JarImpler#implementJar(Class, Path)} is invoked.
+     * {@link info.kgeorgiy.java.advanced.implementor.JarImpler#implementJar(Class, Path)} is invoked.
      * <p>
      * All arguments must not be null. Any errors and warnings are printed to <code>STDOUT</code> and
      * <code>STDERR</code>.

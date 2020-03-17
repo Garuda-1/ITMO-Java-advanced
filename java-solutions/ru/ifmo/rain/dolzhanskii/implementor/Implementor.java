@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
-import static ru.ifmo.rain.dolzhanskii.implementor.FileUtils.prepareSourceCodePath;
+import static ru.ifmo.rain.dolzhanskii.implementor.FileUtils.*;
 
 /**
  * Class implementing {@link Impler}. Provides public methods to generate abstract class or

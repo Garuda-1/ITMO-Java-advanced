@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Assisting class to {@link Implementor}. Provides tools for necessary operations
@@ -45,6 +46,7 @@ class FileUtils {
      * and name.
      *
      * @param token {@link Class} which implementation is required
+     * @param separator {@link String} to substitute as separator
      * @return Path to source code as {@link String}
      */
     static String getImplementationPath(Class<?> token, String separator) {
