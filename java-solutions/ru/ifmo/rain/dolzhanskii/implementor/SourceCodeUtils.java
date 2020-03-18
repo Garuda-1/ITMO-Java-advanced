@@ -159,7 +159,7 @@ class SourceCodeUtils {
      * @param args      {@link String} array to concat
      * @return Collected {@link String}
      */
-    private static String collectBlock(String delimiter, String... args) {
+    private static String collectBlock(final String delimiter, final String... args) {
         return Arrays.stream(args).filter(s -> !s.isEmpty()).collect(Collectors.joining(delimiter));
     }
 
@@ -171,12 +171,12 @@ class SourceCodeUtils {
      * @param line         <code>JAR</code> where an archive shoudl be locates.
      * @return {@link String} of collected of <code>line</code> tokens and eparated by and <code>indent</code>indent string.
      */
-    private static String indent(String indentString, int size, String... line) {
-        StringBuilder result = new StringBuilder();
+    private static String indent(final String indentString, final int size, final String... line) {
+        final StringBuilder result = new StringBuilder();
         for (int i = 0; i < size; i++) {
             result.append(indentString);
         }
-        for (String s : line) {
+        for (final String s : line) {
             result.append(s);
         }
         return result.toString();
@@ -188,7 +188,7 @@ class SourceCodeUtils {
      * @param clazz {@link Class} to find default value of
      * @return {@link String} source code of default value
      */
-    private static String getDefaultValue(Class<?> clazz) {
+    private static String getDefaultValue(final Class<?> clazz) {
         if (!clazz.isPrimitive()) {
             return NULL;
         } else if (clazz.equals(void.class)) {
@@ -196,6 +196,7 @@ class SourceCodeUtils {
         } else if (clazz.equals(boolean.class)) {
             return FALSE;
         } else {
+            // :NOTE: Либо прямо написать "0" либо NUMBER_RETURN_VALUE
             return ZERO;
         }
     }
@@ -207,7 +208,7 @@ class SourceCodeUtils {
      * @param modifiers Modifiers of {@link Class} or {@link Executable}
      * @return {@link String} representation of filtered modifiers
      */
-    private static String getModifiers(int modifiers) {
+    private static String getModifiers(final int modifiers) {
         return Modifier.toString(modifiers & ~Modifier.ABSTRACT);
     }
 
@@ -217,7 +218,7 @@ class SourceCodeUtils {
      * @param token {@link Class} to filter modifiers of
      * @return {@link String} representation of filtered modifiers
      */
-    private static String getClassModifiers(Class<?> token) {
+    private static String getClassModifiers(final Class<?> token) {
         return getModifiers(token.getModifiers() & ~Modifier.INTERFACE & ~Modifier.STATIC & ~Modifier.PROTECTED);
     }
 
@@ -227,7 +228,7 @@ class SourceCodeUtils {
      * @param executable {@link Executable} to filter modifiers of
      * @return {@link String} representation of filtered modifiers
      */
-    private static String getExecutableModifiers(Executable executable) {
+    private static String getExecutableModifiers(final Executable executable) {
         return getModifiers(executable.getModifiers() & ~Modifier.NATIVE & ~Modifier.TRANSIENT);
     }
 
@@ -237,7 +238,7 @@ class SourceCodeUtils {
      * @param token {@link Class} which implementation is required
      * @return Name {@link String} of implementation class
      */
-    private static String getClassImplementationName(Class<?> token) {
+    private static String getClassImplementationName(final Class<?> token) {
         return token.getSimpleName() + IMPL_SUFFIX;
     }
 
@@ -249,12 +250,13 @@ class SourceCodeUtils {
      * @param declaration If <code>True</code> then get declaration {@link String}
      * @return {@link String} of arguments list
      */
-    private static String getArguments(Executable executable, boolean declaration) {
-        ArgNameGenerator nameGenerator = new ArgNameGenerator();
-        int countOfArgs = executable.getParameterCount();
-        String[] names = Stream.generate(nameGenerator).limit(countOfArgs).toArray(String[]::new);
+    private static String getArguments(final Executable executable, final boolean declaration) {
+        final ArgNameGenerator nameGenerator = new ArgNameGenerator();
+        final int countOfArgs = executable.getParameterCount();
+        final String[] names = Stream.generate(nameGenerator).limit(countOfArgs).toArray(String[]::new);
         if (declaration) {
-            String[] types = Arrays.stream(executable.getParameterTypes())
+            // :NOTE: Можно было сделать в один проход без циклов
+            final String[] types = Arrays.stream(executable.getParameterTypes())
                     .map(Class::getCanonicalName).toArray(String[]::new);
             for (int index = 0; index < countOfArgs; index++) {
                 names[index] = collectBlock(SPACE, types[index], names[index]);
@@ -270,8 +272,8 @@ class SourceCodeUtils {
      * @param executable {@link Executable} which exceptions are required
      * @return {@link String} exceptions list
      */
-    private static String getThrowingExceptions(Executable executable) {
-        Class[] exceptionTypes = executable.getExceptionTypes();
+    private static String getThrowingExceptions(final Executable executable) {
+        final Class[] exceptionTypes = executable.getExceptionTypes();
         if (exceptionTypes.length != 0) {
             return collectBlock(SPACE,
                     THROWS,
@@ -281,6 +283,7 @@ class SourceCodeUtils {
         }
     }
 
+    // :NOTE: Типы и так видны в сигнатуре
     /**
      * Generates {@link String} declaring implementation class package if available.
      *
@@ -288,12 +291,9 @@ class SourceCodeUtils {
      * @return Package declaration {@link String} if token is in package or empty
      * {@link String} otherwise
      */
-    private static String generatePackageLine(Class<?> token) {
-        String pkgName = token.getPackage().getName();
-        return (pkgName.isEmpty()) ? "" : collectBlock(SPACE,
-                PACKAGE,
-                pkgName,
-                EOI);
+    private static String generatePackageLine(final Class<?> token) {
+        final String pkgName = token.getPackage().getName();
+        return pkgName.isEmpty() ? "" : collectBlock(SPACE, PACKAGE, pkgName, EOI);
     }
 
     /**
@@ -302,7 +302,7 @@ class SourceCodeUtils {
      * @param token {@link Class} which implementation is required
      * @return Implementation class opening line
      */
-    private static String generateClassOpeningLine(Class<?> token) {
+    private static String generateClassOpeningLine(final Class<?> token) {
         return collectBlock(SPACE,
                 getClassModifiers(token),
                 CLASS,
@@ -319,9 +319,9 @@ class SourceCodeUtils {
      * @param executable {@link Executable} which opening line is required
      * @return Opening {@link String} of requested {@link Executable}
      */
-    private static String generateExecutableOpeningLine(Executable executable) {
-        String executableName;
-        String returnType;
+    private static String generateExecutableOpeningLine(final Executable executable) {
+        final String executableName;
+        final String returnType;
         if (executable instanceof Constructor) {
             executableName = getClassImplementationName(executable.getDeclaringClass());
             returnType = "";
@@ -348,7 +348,7 @@ class SourceCodeUtils {
      * @param body       {@link String} representing method body
      * @return Implementation {@link String} of required {@link Executable}
      */
-    private static String generateExecutable(Executable executable, String body) {
+    private static String generateExecutable(final Executable executable, final String body) {
         return collectBlock(NL,
                 indent(TAB, 1, generateExecutableOpeningLine(executable)),
                 indent(TAB, 2, body),
@@ -363,7 +363,7 @@ class SourceCodeUtils {
      * @param constructor {@link Constructor} which implementation is needed
      * @return Body implementation {@link String} of required {@link Constructor}
      */
-    private static String generateConstructorBody(Constructor constructor) {
+    private static String generateConstructorBody(final Constructor constructor) {
         return collectBlock(SPACE,
                 SUPER,
                 BRACES_OPEN,
@@ -378,7 +378,7 @@ class SourceCodeUtils {
      * @param constructor {@link Constructor} which implementation is needed
      * @return Body implementation {@link String} of required {@link Constructor}
      */
-    private static String generateConstructor(Constructor constructor) {
+    private static String generateConstructor(final Constructor constructor) {
         return generateExecutable(constructor, generateConstructorBody(constructor));
     }
 
@@ -389,12 +389,13 @@ class SourceCodeUtils {
      * @return {@link List} of constructors source code
      * @throws ImplerException In case non-private constructors are missing
      */
-    private static List<String> generateAllConstructors(Class<?> token) throws ImplerException {
+    private static List<String> generateAllConstructors(final Class<?> token) throws ImplerException {
         if (token.isInterface()) {
             return new ArrayList<>();
         }
-        List<Constructor<?>> nonPrivateConstructors = Arrays.stream(token.getDeclaredConstructors())
-                .filter(c -> !Modifier.isPrivate(c.getModifiers())).collect(Collectors.toList());
+        final List<Constructor<?>> nonPrivateConstructors = Arrays.stream(token.getDeclaredConstructors())
+                .filter(c -> !Modifier.isPrivate(c.getModifiers()))
+                .collect(Collectors.toList());
         if (nonPrivateConstructors.isEmpty()) {
             throw new ImplerException("At least one non-private constructor required");
         }
@@ -413,7 +414,7 @@ class SourceCodeUtils {
         /**
          * Enclosed {@link Method}.
          */
-        private Method method;
+        private final Method method;
 
         /**
          * Polynomial hash power.
@@ -429,7 +430,7 @@ class SourceCodeUtils {
          *
          * @param method {@link Method} to wrap
          */
-        SignatureComparedMethod(Method method) {
+        SignatureComparedMethod(final Method method) {
             this.method = method;
         }
 
@@ -462,10 +463,10 @@ class SourceCodeUtils {
          * @return <code>True</code> if objects are equal, <code>False</code> otherwise
          */
         @Override
-        public boolean equals(Object o) {
+        public boolean equals(final Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            SignatureComparedMethod that = (SignatureComparedMethod) o;
+            final SignatureComparedMethod that = (SignatureComparedMethod) o;
             return Objects.equals(method.getReturnType(), that.method.getReturnType()) &&
                     method.getName().equals(that.method.getName()) &&
                     Arrays.equals(method.getParameterTypes(), that.method.getParameterTypes());
@@ -479,7 +480,7 @@ class SourceCodeUtils {
      * @return Method implementation body as {@link String}
      * @see #getDefaultValue(Class)
      */
-    private static String generateMethodBody(Method method) {
+    private static String generateMethodBody(final Method method) {
         return collectBlock(SPACE,
                 RETURN,
                 getDefaultValue(method.getReturnType()),
@@ -492,7 +493,7 @@ class SourceCodeUtils {
      * @param method {@link Method} to generate body of
      * @return Method implementation body as {@link String}
      */
-    private static String generateMethod(Method method) {
+    private static String generateMethod(final Method method) {
         return generateExecutable(method, generateMethodBody(method));
     }
 
@@ -502,7 +503,7 @@ class SourceCodeUtils {
      * @param methods {@link Method} array that should be filtered
      * @return {@link Set} of final versions of each {@link Method}
      */
-    private static Set<SignatureComparedMethod> getSignatureDistinctMethods(Method[] methods) {
+    private static Set<SignatureComparedMethod> getSignatureDistinctMethods(final Method[] methods) {
         return Arrays.stream(methods)
                 .map(SignatureComparedMethod::new)
                 .collect(Collectors.toCollection(HashSet::new));
@@ -515,14 +516,14 @@ class SourceCodeUtils {
      * @return {@link List} of {@link Method} implementations.
      */
     private static List<String> generateAllMethods(Class<?> token) {
-        Set<SignatureComparedMethod> methodsSet = getSignatureDistinctMethods(token.getMethods());
+        final Set<SignatureComparedMethod> methodsSet = getSignatureDistinctMethods(token.getMethods());
         for (; token != null; token = token.getSuperclass()) {
             methodsSet.addAll(getSignatureDistinctMethods(token.getDeclaredMethods()));
         }
         return methodsSet
                 .stream()
                 .filter(m -> Modifier.isAbstract(m.getMethod().getModifiers()))
-                .map(m -> SourceCodeUtils.generateMethod(m.getMethod()))
+                .map(m -> generateMethod(m.getMethod()))
                 .collect(Collectors.toList());
     }
 
@@ -532,9 +533,9 @@ class SourceCodeUtils {
      * @param input {@link String} to be translated
      * @return Translation result
      */
-    private static String unicodeTranslator(String input) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (char c : input.toCharArray()) {
+    private static String unicodeTranslator(final String input) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        for (final char c : input.toCharArray()) {
             stringBuilder.append(c < 128 ? String.valueOf(c) : String.format("\\u%04x", (int) c));
         }
         return stringBuilder.toString();
@@ -553,7 +554,7 @@ class SourceCodeUtils {
      * @see #generateAllMethods(Class) Methods generation method
      * @see #unicodeTranslator(String) Unicode characters translator
      */
-    static String generateSourceCode(Class<?> token) throws ImplerException {
+    static String generateSourceCode(final Class<?> token) throws ImplerException {
         return unicodeTranslator(collectBlock(NL,
                 generatePackageLine(token),
                 indent(NL, 1, generateClassOpeningLine(token)),

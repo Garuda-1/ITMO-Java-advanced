@@ -12,6 +12,7 @@ import static ru.ifmo.rain.dolzhanskii.implementor.FileUtils.*;
 import static ru.ifmo.rain.dolzhanskii.implementor.JarUtils.compileCode;
 import static ru.ifmo.rain.dolzhanskii.implementor.JarUtils.createJar;
 
+// :NOTE: Использование <code>
 /**
  * Class implementing {@link JarImpler} and extending {@link Implementor}. Adds functionality
  * to create <code>JAR</code> containing compiled generated implementation of given class.
@@ -40,13 +41,13 @@ public class JarImplementor extends Implementor implements JarImpler {
      * @see JarUtils#createJar(Class, Path, Path) <code>JAR</code> collector method
      */
     @Override
-    public void implementJar(Class<?> token, Path jarFile) throws ImplerException {
+    public void implementJar(final Class<?> token, final Path jarFile) throws ImplerException {
         if (token == null || jarFile == null) {
             throw new ImplerException("Arguments must not be null");
         }
 
-        Path parentDir = createParentDirectories(jarFile);
-        Path tmpDir = createTmpDir(parentDir);
+        final Path parentDir = createParentDirectories(jarFile);
+        final Path tmpDir = createTmpDir(parentDir);
 
         try {
             implement(token, tmpDir);
@@ -73,7 +74,7 @@ public class JarImplementor extends Implementor implements JarImpler {
      *
      * @param args Provided to program arguments
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         try {
             Objects.requireNonNull(args);
             if (args.length != 2 && args.length != 3) {
@@ -82,13 +83,14 @@ public class JarImplementor extends Implementor implements JarImpler {
             }
             Objects.requireNonNull(args[0]);
             Objects.requireNonNull(args[1]);
+            // :NOTE: {}
             if (args.length == 3) Objects.requireNonNull(args[2]);
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             System.err.println("Error: Null arguments are not allowed");
             return;
         }
 
-        boolean jarOption;
+        final boolean jarOption;
         if (args.length == 2) {
             jarOption = false;
         } else {
@@ -102,18 +104,18 @@ public class JarImplementor extends Implementor implements JarImpler {
             }
         }
 
-        Class<?> token;
+        final Class<?> token;
         try {
             token = Class.forName(args[0]);
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             System.err.println("Error: Class not found by name");
             return;
         }
 
-        Path root;
+        final Path root;
         try {
             root = Paths.get(args[1]);
-        } catch (InvalidPathException e) {
+        } catch (final InvalidPathException e) {
             System.err.println("Error: Invalid root directory");
             return;
         }
@@ -124,7 +126,7 @@ public class JarImplementor extends Implementor implements JarImpler {
             } else {
                 new Implementor().implement(token, root);
             }
-        } catch (ImplerException e) {
+        } catch (final ImplerException e) {
             System.err.println("Error: " + e.getMessage());
         }
     }

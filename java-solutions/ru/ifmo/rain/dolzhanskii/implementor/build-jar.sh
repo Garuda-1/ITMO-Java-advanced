@@ -20,6 +20,7 @@ rm -rf ${OUT_PATH}
 
 javac --module-path ${REQ_PATH} ${SRC_PATH}/module-info.java ${SRC_PATH}/${MODULE_PATH}/*.java -d ${OUT_PATH}
 
+// :NOTE: Менять текущую директорию пользователя не хорошо
 cd ${OUT_PATH}
 
 mkdir ${JAR_PATH} 2> /dev/null

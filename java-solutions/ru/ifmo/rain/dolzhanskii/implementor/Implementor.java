@@ -39,8 +39,8 @@ public class Implementor implements Impler {
      * @param token {@link Class} which implementation is required
      * @throws ImplerException In case check fails
      */
-    private void validateToken(Class<?> token) throws ImplerException {
-        int modifiers = token.getModifiers();
+    private void validateToken(final Class<?> token) throws ImplerException {
+        final int modifiers = token.getModifiers();
         if (token.isPrimitive() || token.isArray() || token == Enum.class || Modifier.isFinal(modifiers)
                 || Modifier.isPrivate(modifiers)) {
             throw new ImplerException("Unsupported token given");
@@ -62,18 +62,18 @@ public class Implementor implements Impler {
      * @see #validateToken(Class) Token implementation support validator
      */
     @Override
-    public void implement(Class<?> token, Path root) throws ImplerException {
+    public void implement(final Class<?> token, final Path root) throws ImplerException {
         if (token == null || root == null) {
             throw new ImplerException("Arguments must not be null");
         }
 
         validateToken(token);
 
-        Path sourceCodePath = prepareSourceCodePath(token, root);
+        final Path sourceCodePath = prepareSourceCodePath(token, root);
 
-        try (BufferedWriter sourceCodeWriter = Files.newBufferedWriter(sourceCodePath)) {
+        try (final BufferedWriter sourceCodeWriter = Files.newBufferedWriter(sourceCodePath)) {
             sourceCodeWriter.write(SourceCodeUtils.generateSourceCode(token));
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new ImplerException("I/O error occurred", e);
         }
     }
@@ -87,7 +87,7 @@ public class Implementor implements Impler {
      *
      * @param args Provided to program arguments
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         try {
             Objects.requireNonNull(args);
             if (args.length != 2) {
@@ -96,30 +96,30 @@ public class Implementor implements Impler {
             }
             Objects.requireNonNull(args[0]);
             Objects.requireNonNull(args[1]);
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             System.err.println("Error: Null arguments are not allowed");
             return;
         }
 
-        Class<?> token;
+        final Class<?> token;
         try {
             token = Class.forName(args[0]);
-        } catch (ClassNotFoundException e) {
+        } catch (final ClassNotFoundException e) {
             System.err.println("Error: Class not found by name");
             return;
         }
 
-        Path root;
+        final Path root;
         try {
             root = Paths.get(args[1]);
-        } catch (InvalidPathException e) {
+        } catch (final InvalidPathException e) {
             System.err.println("Error: Invalid root directory");
             return;
         }
 
         try {
             new Implementor().implement(token, root);
-        } catch (ImplerException e) {
+        } catch (final ImplerException e) {
             System.err.println("Error: " + e.getMessage());
         }
     }

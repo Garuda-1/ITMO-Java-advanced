@@ -1,18 +1,15 @@
 package ru.ifmo.rain.dolzhanskii.implementor;
 
-import info.kgeorgiy.java.advanced.implementor.Impler;
 import info.kgeorgiy.java.advanced.implementor.ImplerException;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
@@ -47,14 +44,15 @@ class JarUtils {
      * @throws ImplerException In case no compiler is provided
      * @throws ImplerException In case compilation finished with non-zero return code
      */
-    static void compileCode(Class<?> token, Path tmpDir) throws ImplerException {
-        Path superPath;
+    static void compileCode(final Class<?> token, final Path tmpDir) throws ImplerException {
+        final Path superPath;
         try {
-            CodeSource codeSource = token.getProtectionDomain().getCodeSource();
+            final CodeSource codeSource = token.getProtectionDomain().getCodeSource();
             if (codeSource == null) {
+                // :NOTE: code source и source code две совсем разные вещи
                 throw new ImplerException("Failed to retrieve super class source code");
             }
-            URL sourceCodeUrl = codeSource.getLocation();
+            final URL sourceCodeUrl = codeSource.getLocation();
             if (sourceCodeUrl == null) {
                 throw new ImplerException("Failed to retrieve super class code source location");
             }
@@ -66,22 +64,22 @@ class JarUtils {
                 sourceCodePath = sourceCodePath.substring(1);
             }
             superPath = Path.of(sourceCodePath);
-        } catch (InvalidPathException e) {
+        } catch (final InvalidPathException e) {
             throw new ImplerException("Failed to retrieve super class source code");
         }
 
-        JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
+        final JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         if (javaCompiler == null) {
             throw new ImplerException("No Java compiler provided");
         }
 
-        String[] compilerArgs = {
+        final String[] compilerArgs = {
                 "-cp",
                 tmpDir.toString() + File.pathSeparator + superPath.toString(),
                 tmpDir.resolve(getImplementationPath(token, File.separator) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
         };
 
-        int returnCode = javaCompiler.run(null, null, null, compilerArgs);
+        final int returnCode = javaCompiler.run(null, null, null, compilerArgs);
         if (returnCode != 0) {
             throw new ImplerException("Implementation compilation returned non-zero code " + returnCode);
         }
@@ -96,15 +94,15 @@ class JarUtils {
      * @param targetPath {@link Path} where resulting <code>JAR</code> must be created
      * @throws ImplerException In case I/O error occurred
      */
-    static void createJar(Class<?> token, Path tmpDir, Path targetPath) throws ImplerException {
-        Manifest manifest = new Manifest();
+    static void createJar(final Class<?> token, final Path tmpDir, final Path targetPath) throws ImplerException {
+        final Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
 
-        try (JarOutputStream stream = new JarOutputStream(Files.newOutputStream(targetPath), manifest)) {
-            String implementationPath = getImplementationPath(token, "/") + IMPL_SUFFIX + CLASS_EXTENSION;
+        try (final JarOutputStream stream = new JarOutputStream(Files.newOutputStream(targetPath), manifest)) {
+            final String implementationPath = getImplementationPath(token, "/") + IMPL_SUFFIX + CLASS_EXTENSION;
             stream.putNextEntry(new ZipEntry(implementationPath));
             Files.copy(Path.of(tmpDir.toString(), implementationPath), stream);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new ImplerException("Failed to write JAR", e);
         }
     }
