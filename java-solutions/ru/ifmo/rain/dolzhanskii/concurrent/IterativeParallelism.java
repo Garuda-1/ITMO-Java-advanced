@@ -37,6 +37,44 @@ public class IterativeParallelism implements AdvancedIP {
         this.parallelMapper = parallelMapper;
     }
 
+    /**
+     * Joins to threads and handles thrown exceptions.
+     *
+     * @param workers List of threads to join to
+     * @param suppressExceptions Flag to define whether generate exception including suppressed ones from threads or not
+     * @throws InterruptedException Exception concluding all throws exceptions by threads
+     */
+    static void joinAll(List<Thread> workers, boolean suppressExceptions) throws InterruptedException {
+        int threads = workers.size();
+        for (int i = 0; i < threads; i++) {
+            try {
+                workers.get(i).join();
+            } catch (final InterruptedException e) {
+                InterruptedException exception = null;
+                if (!suppressExceptions) {
+                    exception = new InterruptedException("Some threads were interrupted");
+                    exception.addSuppressed(e);
+                }
+                for (int j = i; j < threads; j++) {
+                    workers.get(j).interrupt();
+                }
+                for (int j = i; j < threads; j++) {
+                    try {
+                        workers.get(j).join();
+                    } catch (final InterruptedException e1) {
+                        if (!suppressExceptions) {
+                            exception.addSuppressed(e1);
+                        }
+                        --j;
+                    }
+                }
+                if (!suppressExceptions) {
+                    throw exception;
+                }
+            }
+        }
+    }
+
     private <T> List<List<T>> getListPerThreadDistribution(final int threads, final List<T> list) {
         if (threads < 0) {
             throw new IllegalArgumentException("Error: Threads count cannot be negative");
@@ -80,37 +118,12 @@ public class IterativeParallelism implements AdvancedIP {
                 thread.start();
             }
 
-            joinAll(threads, workers);
+            joinAll(workers, false);
         } else {
             batchResults = parallelMapper.map(batchJob, batches.stream().map(List::stream).collect(Collectors.toList()));
         }
 
         return reduceFunction.apply(batchResults.stream());
-    }
-
-
-    static void joinAll(int threads, List<Thread> workers) throws InterruptedException {
-        final List<InterruptedException> batchExceptions = new ArrayList<>();
-        for (int i = 0; i < threads; i++) {
-            try {
-                workers.get(i).join();
-            } catch (final InterruptedException e) {
-                final InterruptedException exception = new InterruptedException("Some threads were interrupted");
-                exception.addSuppressed(e);
-                for (int j = i; j < threads; j++) {
-                    workers.get(j).interrupt();
-                }
-                for (int j = i; j < threads; j++) {
-                    try {
-                        workers.get(j).join();
-                    } catch (final InterruptedException e1) {
-                        e.addSuppressed(e1);
-                        --j;
-                    }
-                }
-                throw exception;
-            }
-        }
     }
 
     private static <T> List<T> flatCollect(final Stream<? extends Stream<? extends T>> streams) {

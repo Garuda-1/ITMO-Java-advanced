@@ -7,19 +7,17 @@ import java.util.function.Function;
 
 import static ru.ifmo.rain.dolzhanskii.concurrent.IterativeParallelism.joinAll;
 
+/**
+ * Implementation of {@link ParallelMapper}. Creates given number of threads upon creation and tasks queue.
+ * Threads are waiting for new tasks to appear and greedily performs them. Tasks are expected to be mapping queries.
+ */
 @SuppressWarnings("unused")
 public class ParallelMapperImpl implements ParallelMapper {
-    private final int THREADS;
-
     private List<Thread> workers;
     private final Queue<Runnable> tasks;
 
-    private void addTask(final Runnable newTask) throws InterruptedException {
+    private void addTask(final Runnable newTask) {
         synchronized (tasks) {
-            final int MAX_TASKS = 10000;
-            while (tasks.size() >= MAX_TASKS) {
-                tasks.wait();
-            }
             tasks.add(newTask);
             tasks.notifyAll();
         }
@@ -65,11 +63,15 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
     }
 
+    /**
+     * Basic constructor. Creates given number of threads and initializes tasks queue.
+     *
+     * @param threads Number of threads to distribute tasks among
+     */
     public ParallelMapperImpl(int threads) {
         if (threads <= 0) {
             throw new IllegalArgumentException("Number of threads cannot be negative");
         }
-        this.THREADS = threads;
 
         workers = new ArrayList<>();
         tasks = new ArrayDeque<>();
@@ -86,29 +88,42 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         };
 
-        for (int i = 0; i < THREADS; i++) {
+        for (int i = 0; i < threads; i++) {
             workers.add(new Thread(WORKER_ROUTINE));
         }
         workers.forEach(Thread::start);
     }
 
+    /**
+     * Performs mapping query.
+     *
+     * @param function Map function to perform
+     * @param list List of elements to map
+     * @param <T> Map input type
+     * @param <R> Map output type
+     * @return List of mapped elements
+     * @throws InterruptedException Transparent exception received from threads
+     */
     @Override
     public <T, R> List<R> map(Function<? super T, ? extends R> function, List<? extends T> list) throws InterruptedException {
         SynchronizedList<R> results = new SynchronizedList<>(list.size());
         List<RuntimeException> taskExceptions = new ArrayList<>();
 
-        for (int i = 0; i < list.size(); i++) {
-            final int index = i;
+        int index = 0;
+
+        for (T target : list) {
+            final T finalTarget = target;
+            final int finalIndex = index++;
             addTask(() -> {
                 R result = null;
                 try {
-                    result = function.apply(list.get(index));
+                    result = function.apply(finalTarget);
                 } catch (RuntimeException e) {
                     synchronized (taskExceptions) {
                         taskExceptions.add(e);
                     }
                 }
-                results.set(index, result);
+                results.set(finalIndex, result);
             });
         }
 
@@ -121,11 +136,14 @@ public class ParallelMapperImpl implements ParallelMapper {
         return results.asList();
     }
 
+    /**
+     * Terminates all generated threads.
+     */
     @Override
     public void close() {
         workers.forEach(Thread::interrupt);
         try {
-            joinAll(THREADS, workers);
+            joinAll(workers, true);
         } catch (InterruptedException e) {
             // Ignored
         }
