@@ -3,6 +3,7 @@ package ru.ifmo.rain.dolzhanskii.concurrent;
 import info.kgeorgiy.java.advanced.concurrent.AdvancedIP;
 import info.kgeorgiy.java.advanced.concurrent.ListIP;
 import info.kgeorgiy.java.advanced.concurrent.ScalarIP;
+import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.*;
 import java.util.function.Function;
@@ -18,7 +19,25 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("unused")
 public class IterativeParallelism implements AdvancedIP {
-    private static <T> List<List<T>> getListPerThreadDistribution(final int threads, final List<T> list) {
+    private final ParallelMapper parallelMapper;
+
+    /**
+     * Default constructor. When class is instantiated via it, separate threads are created for each task.
+     */
+    public IterativeParallelism() {
+        parallelMapper = null;
+    }
+
+    /**
+     * Default constructor. When class is instantiated via it, {@link ParallelMapper} is used to distribute tasks.
+     *
+     * @param parallelMapper Mapper to connect to
+     */
+    public IterativeParallelism(ParallelMapper parallelMapper) {
+        this.parallelMapper = parallelMapper;
+    }
+
+    private <T> List<List<T>> getListPerThreadDistribution(final int threads, final List<T> list) {
         if (threads < 0) {
             throw new IllegalArgumentException("Error: Threads count cannot be negative");
         }
@@ -38,21 +57,39 @@ public class IterativeParallelism implements AdvancedIP {
         return distribution;
     }
 
-    private static <T, B, R> R runIP(int threads, final List<T> list, final Function<Stream<T>, B> batchJob,
+    private <T> T runIP(int threads, final List<T> list, final Function<Stream<T>, T> batchAndReduceJob) throws InterruptedException {
+        return runIP(threads, list, batchAndReduceJob, batchAndReduceJob);
+    }
+
+    private <T, B, R> R runIP(int threads, final List<T> list, final Function<Stream<T>, B> batchJob,
                                      final Function<Stream<B>, R> reduceFunction) throws InterruptedException {
         final List<List<T>> batches = getListPerThreadDistribution(threads, list);
         threads = batches.size();
-        final List<B> batchResults = new ArrayList<>(Collections.nCopies(threads, null));
-        final List<Thread> workers = new ArrayList<>();
+        List<B> batchResults;
 
-        for (int index = 0; index < threads; index++) {
-            final int threadIndex = index;
-            final Thread thread = new Thread(
-                    () -> batchResults.set(threadIndex, batchJob.apply(batches.get(threadIndex).stream())));
-            workers.add(thread);
-            thread.start();
+        if (parallelMapper == null) {
+            batchResults = new ArrayList<>(Collections.nCopies(threads, null));
+
+            final List<Thread> workers = new ArrayList<>();
+
+            for (int index = 0; index < threads; index++) {
+                final int threadIndex = index;
+                final Thread thread = new Thread(
+                        () -> batchResults.set(threadIndex, batchJob.apply(batches.get(threadIndex).stream())));
+                workers.add(thread);
+                thread.start();
+            }
+
+            joinAll(threads, workers);
+        } else {
+            batchResults = parallelMapper.map(batchJob, batches.stream().map(List::stream).collect(Collectors.toList()));
         }
 
+        return reduceFunction.apply(batchResults.stream());
+    }
+
+
+    static void joinAll(int threads, List<Thread> workers) throws InterruptedException {
         final List<InterruptedException> batchExceptions = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
             try {
@@ -74,12 +111,10 @@ public class IterativeParallelism implements AdvancedIP {
                 throw exception;
             }
         }
-
-        return reduceFunction.apply(batchResults.stream());
     }
 
     private static <T> List<T> flatCollect(final Stream<? extends Stream<? extends T>> streams) {
-        // :NOTE: Фактически вся работа выполняется в этом методе в одном потоке
+        // :FIXED-NOTE: Фактически вся работа выполняется в этом методе в одном потоке
         return streams.flatMap(Function.identity()).collect(Collectors.toList());
     }
 
@@ -107,24 +142,23 @@ public class IterativeParallelism implements AdvancedIP {
     public <T> List<T> filter(final int threads, final List<? extends T> values, final Predicate<? super T> predicate)
             throws InterruptedException {
         return runIP(threads, values,
-                stream -> stream.filter(predicate),
+                stream -> stream.filter(predicate).collect(Collectors.toList()).stream(),
                 IterativeParallelism::flatCollect);
     }
 
     @Override
-    public <T, U> List<U> map(final int threads, final List<? extends T> values, final Function<? super T, ? extends U> f)
-            throws InterruptedException {
+    public <T, U> List<U> map(final int threads, final List<? extends T> values,
+                              final Function<? super T, ? extends U> f) throws InterruptedException {
         return runIP(threads, values,
-                stream -> stream.map(f),
+                stream -> stream.map(f).collect(Collectors.toList()).stream(),
                 IterativeParallelism::flatCollect);
     }
 
     @Override
     public <T> T maximum(final int threads, final List<? extends T> values, final Comparator<? super T> comparator)
             throws InterruptedException {
-        // :NOTE: копипаста
+        // :FIXED-NOTE: копипаста
         return runIP(threads, values,
-                stream -> stream.max(comparator).orElseThrow(),
                 stream -> stream.max(comparator).orElseThrow());
     }
 
