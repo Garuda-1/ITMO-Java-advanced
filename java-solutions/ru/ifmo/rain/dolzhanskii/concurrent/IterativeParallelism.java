@@ -65,7 +65,7 @@ public class IterativeParallelism implements AdvancedIP {
                         if (!suppressExceptions) {
                             exception.addSuppressed(e1);
                         }
-                        --j;
+                        j--;
                     }
                 }
                 if (!suppressExceptions) {
