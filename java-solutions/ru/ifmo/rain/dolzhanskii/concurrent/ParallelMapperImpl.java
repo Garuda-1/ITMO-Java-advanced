@@ -5,6 +5,8 @@ import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static ru.ifmo.rain.dolzhanskii.concurrent.IterativeParallelism.joinAll;
 
@@ -41,11 +43,8 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         };
 
-//        workers = new ArrayList<>(Collections.nCopies(threads, new Thread(workerRoutine)));
-        workers = new ArrayList<>();
-        for (int i = 0; i < threads; i++) {
-            workers.add(new Thread(workerRoutine));
-        }
+        workers = IntStream.range(0, threads).mapToObj(i -> new Thread(workerRoutine))
+                .collect(Collectors.toCollection(ArrayList::new));
         workers.forEach(Thread::start);
     }
 
@@ -60,7 +59,8 @@ public class ParallelMapperImpl implements ParallelMapper {
      * @throws InterruptedException Transparent exception received from threads
      */
     @Override
-    public <T, R> List<R> map(final Function<? super T, ? extends R> function, final List<? extends T> list) throws InterruptedException {
+    public <T, R> List<R> map(final Function<? super T, ? extends R> function, final List<? extends T> list)
+            throws InterruptedException {
         final SynchronizedList<R> results = new SynchronizedList<>(list.size());
         final SynchronizedList<RuntimeException> taskExceptions = new SynchronizedList<>();
 
