@@ -33,7 +33,7 @@ public class IterativeParallelism implements AdvancedIP {
      *
      * @param parallelMapper Mapper to connect to
      */
-    public IterativeParallelism(ParallelMapper parallelMapper) {
+    public IterativeParallelism(final ParallelMapper parallelMapper) {
         this.parallelMapper = parallelMapper;
     }
 
@@ -44,17 +44,14 @@ public class IterativeParallelism implements AdvancedIP {
      * @param suppressExceptions Flag to define whether generate exception including suppressed ones from threads or not
      * @throws InterruptedException Exception concluding all throws exceptions by threads
      */
-    static void joinAll(List<Thread> workers, boolean suppressExceptions) throws InterruptedException {
-        int threads = workers.size();
+    static void joinAll(final List<Thread> workers, final boolean suppressExceptions) throws InterruptedException {
+        final int threads = workers.size();
         for (int i = 0; i < threads; i++) {
             try {
                 workers.get(i).join();
             } catch (final InterruptedException e) {
-                InterruptedException exception = null;
-                if (!suppressExceptions) {
-                    exception = new InterruptedException("Some threads were interrupted");
-                    exception.addSuppressed(e);
-                }
+                final InterruptedException exception = new InterruptedException("Some threads were interrupted");
+                exception.addSuppressed(e);
                 for (int j = i; j < threads; j++) {
                     workers.get(j).interrupt();
                 }
@@ -62,9 +59,7 @@ public class IterativeParallelism implements AdvancedIP {
                     try {
                         workers.get(j).join();
                     } catch (final InterruptedException e1) {
-                        if (!suppressExceptions) {
-                            exception.addSuppressed(e1);
-                        }
+                        exception.addSuppressed(e1);
                         j--;
                     }
                 }
@@ -95,7 +90,7 @@ public class IterativeParallelism implements AdvancedIP {
         return distribution;
     }
 
-    private <T> T runIP(int threads, final List<T> list, final Function<Stream<T>, T> batchAndReduceJob) throws InterruptedException {
+    private <T> T runIP(final int threads, final List<T> list, final Function<Stream<T>, T> batchAndReduceJob) throws InterruptedException {
         return runIP(threads, list, batchAndReduceJob, batchAndReduceJob);
     }
 
@@ -103,7 +98,7 @@ public class IterativeParallelism implements AdvancedIP {
                                      final Function<Stream<B>, R> reduceFunction) throws InterruptedException {
         final List<List<T>> batches = getListPerThreadDistribution(threads, list);
         threads = batches.size();
-        List<B> batchResults;
+        final List<B> batchResults;
 
         if (parallelMapper == null) {
             batchResults = new ArrayList<>(Collections.nCopies(threads, null));
@@ -154,6 +149,7 @@ public class IterativeParallelism implements AdvancedIP {
     @Override
     public <T> List<T> filter(final int threads, final List<? extends T> values, final Predicate<? super T> predicate)
             throws InterruptedException {
+        // :NOTE: копипаста
         return runIP(threads, values,
                 stream -> stream.filter(predicate).collect(Collectors.toList()).stream(),
                 IterativeParallelism::flatCollect);
