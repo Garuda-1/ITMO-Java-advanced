@@ -18,11 +18,6 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     private void addTask(final Runnable newTask) throws InterruptedException {
         synchronized (tasks) {
-            final int MAX_TASKS = 100;
-
-            while (tasks.size() >= MAX_TASKS) {
-                tasks.wait();
-            }
             tasks.add(newTask);
             tasks.notifyAll();
         }
