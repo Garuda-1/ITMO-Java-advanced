@@ -3,6 +3,7 @@ package ru.ifmo.rain.dolzhanskii.concurrent;
 import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static ru.ifmo.rain.dolzhanskii.concurrent.IterativeParallelism.joinAll;
@@ -16,51 +17,6 @@ public class ParallelMapperImpl implements ParallelMapper {
     private List<Thread> workers;
     private final Queue<Runnable> tasks;
 
-    private void addTask(final Runnable newTask) {
-        synchronized (tasks) {
-            tasks.add(newTask);
-            tasks.notifyAll();
-        }
-    }
-
-    private void runTask() throws InterruptedException {
-        final Runnable currentTask;
-        synchronized (tasks) {
-            while (tasks.isEmpty()) {
-                tasks.wait();
-            }
-            currentTask = tasks.poll();
-            tasks.notifyAll();
-        }
-        currentTask.run();
-    }
-
-    private class SynchronizedList<T> {
-        private final List<T> list;
-        private int remaining;
-
-        SynchronizedList(final int size) {
-            list = new ArrayList<>(Collections.nCopies(size, null));
-            remaining = list.size();
-        }
-
-        synchronized void set(final int index, final T value) {
-            list.set(index, value);
-            remaining--;
-            if (remaining == 0) {
-                notify();
-            }
-        }
-
-        synchronized List<T> asList() throws InterruptedException {
-            while (remaining > 0) {
-                wait();
-            }
-            return list;
-        }
-    }
-
-    // :NOTE: В начало
     /**
      * Basic constructor. Creates given number of threads and initializes tasks queue.
      *
@@ -85,7 +41,7 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         };
 
-        // :NOTE: Streams?
+//        workers = new ArrayList<>(Collections.nCopies(threads, new Thread(workerRoutine)));
         workers = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
             workers.add(new Thread(workerRoutine));
@@ -106,7 +62,7 @@ public class ParallelMapperImpl implements ParallelMapper {
     @Override
     public <T, R> List<R> map(final Function<? super T, ? extends R> function, final List<? extends T> list) throws InterruptedException {
         final SynchronizedList<R> results = new SynchronizedList<>(list.size());
-        final List<RuntimeException> taskExceptions = new ArrayList<>();
+        final SynchronizedList<RuntimeException> taskExceptions = new SynchronizedList<>();
 
         int index = 0;
 
@@ -117,9 +73,7 @@ public class ParallelMapperImpl implements ParallelMapper {
                 try {
                     result = function.apply(target);
                 } catch (final RuntimeException e) {
-                    synchronized (taskExceptions) {
-                        taskExceptions.add(e);
-                    }
+                    taskExceptions.add(e);
                 }
                 results.set(finalIndex, result);
             });
@@ -144,6 +98,67 @@ public class ParallelMapperImpl implements ParallelMapper {
             joinAll(workers, true);
         } catch (final InterruptedException e) {
             // Ignored
+        }
+    }
+
+    private void addTask(final Runnable newTask) {
+        synchronized (tasks) {
+            tasks.add(newTask);
+            tasks.notifyAll();
+        }
+    }
+
+    private void runTask() throws InterruptedException {
+        final Runnable currentTask;
+        synchronized (tasks) {
+            while (tasks.isEmpty()) {
+                tasks.wait();
+            }
+            currentTask = tasks.poll();
+            tasks.notifyAll();
+        }
+        currentTask.run();
+    }
+
+    private class SynchronizedList<T> {
+        private final List<T> list;
+        private int remaining;
+
+        SynchronizedList() {
+            list = new ArrayList<>();
+            remaining = 0;
+        }
+
+        SynchronizedList(final int size) {
+            list = new ArrayList<>(Collections.nCopies(size, null));
+            remaining = list.size();
+        }
+
+        synchronized void set(final int index, final T value) {
+            list.set(index, value);
+            remaining--;
+            if (remaining == 0) {
+                notify();
+            }
+        }
+
+        synchronized void add(final T value) {
+            list.add(value);
+        }
+
+        synchronized List<T> asList() throws InterruptedException {
+            while (remaining > 0) {
+                wait();
+            }
+            return list;
+        }
+
+        synchronized boolean isEmpty() {
+            return list.isEmpty();
+        }
+
+        synchronized void forEach(Consumer<T> action) {
+            list.forEach(action);
         }
     }
 }

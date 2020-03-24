@@ -146,21 +146,23 @@ public class IterativeParallelism implements AdvancedIP {
                 stream -> stream.collect(Collectors.joining()));
     }
 
+    private <T, U> List<U> flatQuery(final int threads, final List<? extends T> values,
+                                     final Function<Stream<? extends T>, Stream<? extends U>> function)
+            throws InterruptedException {
+        return runIP(threads, values, stream -> function.apply(stream).collect(Collectors.toList()).stream(),
+                IterativeParallelism::flatCollect);
+    }
+
     @Override
     public <T> List<T> filter(final int threads, final List<? extends T> values, final Predicate<? super T> predicate)
             throws InterruptedException {
-        // :NOTE: копипаста
-        return runIP(threads, values,
-                stream -> stream.filter(predicate).collect(Collectors.toList()).stream(),
-                IterativeParallelism::flatCollect);
+        return flatQuery(threads, values, stream -> stream.filter(predicate));
     }
 
     @Override
     public <T, U> List<U> map(final int threads, final List<? extends T> values,
                               final Function<? super T, ? extends U> f) throws InterruptedException {
-        return runIP(threads, values,
-                stream -> stream.map(f).collect(Collectors.toList()).stream(),
-                IterativeParallelism::flatCollect);
+        return flatQuery(threads, values, stream -> stream.map(f));
     }
 
     @Override
