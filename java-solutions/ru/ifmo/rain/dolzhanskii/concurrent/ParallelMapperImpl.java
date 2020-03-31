@@ -171,7 +171,7 @@ public class ParallelMapperImpl implements ParallelMapper {
             return list.isEmpty();
         }
 
-        synchronized void forEach(Consumer<T> action) {
+        synchronized void forEach(final Consumer<T> action) {
             list.forEach(action);
         }
     }

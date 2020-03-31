@@ -113,17 +113,15 @@ public class IterativeParallelism implements AdvancedIP {
         return batchResults;
     }
 
-    private <T, B, R> R runIP(int threads, final List<T> list, final Function<Stream<T>, B> batchJob,
-                                     final Function<Stream<B>, R> reduceFunction) throws InterruptedException {
+    private <T, B, R> R runIP(final int threads, final List<T> list, final Function<Stream<T>, B> batchJob,
+                              final Function<Stream<B>, R> reduceFunction) throws InterruptedException {
         final List<List<T>> batches = getListPerThreadDistribution(threads, list);
-        threads = batches.size();
         final List<B> batchResults;
 
         if (parallelMapper == null) {
-            batchResults = runIPWithoutMapper(threads, batches, batchJob);
+            batchResults = runIPWithoutMapper(batches.size(), batches, batchJob);
         } else {
-            batchResults = parallelMapper.map(batchJob,
-                    batches.stream().map(List::stream).collect(Collectors.toList()));
+            batchResults = parallelMapper.map(batchJob, batches.stream().map(List::stream).collect(Collectors.toList()));
         }
 
         return reduceFunction.apply(batchResults.stream());
