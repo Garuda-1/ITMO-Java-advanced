@@ -130,7 +130,6 @@ public class IterativeParallelism implements AdvancedIP {
     }
 
     private static <T> List<T> flatCollect(final Stream<? extends Stream<? extends T>> streams) {
-        // :FIXED-NOTE: Фактически вся работа выполняется в этом методе в одном потоке
         return streams.flatMap(Function.identity()).collect(Collectors.toList());
     }
 
@@ -177,7 +176,6 @@ public class IterativeParallelism implements AdvancedIP {
     @Override
     public <T> T maximum(final int threads, final List<? extends T> values, final Comparator<? super T> comparator)
             throws InterruptedException {
-        // :FIXED-NOTE: копипаста
         return runIP(threads, values,
                 stream -> stream.max(comparator).orElseThrow());
     }
