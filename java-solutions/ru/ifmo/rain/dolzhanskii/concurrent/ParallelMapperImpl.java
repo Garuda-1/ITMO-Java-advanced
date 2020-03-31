@@ -62,7 +62,7 @@ public class ParallelMapperImpl implements ParallelMapper {
     public <T, R> List<R> map(final Function<? super T, ? extends R> function, final List<? extends T> list)
             throws InterruptedException {
         final SynchronizedList<R> results = new SynchronizedList<>(list.size());
-        final SynchronizedList<RuntimeException> taskExceptions = new SynchronizedList<>();
+        final SynchronizedList<RuntimeException> taskExceptions = new SynchronizedList<>(list.size());
 
         int index = 0;
 
@@ -70,18 +70,28 @@ public class ParallelMapperImpl implements ParallelMapper {
             final int finalIndex = index++;
             addTask(() -> {
                 R result = null;
+                RuntimeException exception = null;
+
                 try {
                     result = function.apply(target);
                 } catch (final RuntimeException e) {
-                    taskExceptions.add(e);
+                    exception = e;
                 }
+
                 results.set(finalIndex, result);
+                taskExceptions.set(finalIndex, exception);
             });
         }
 
-        if (!taskExceptions.isEmpty()) {
-            final RuntimeException exception = new RuntimeException("Errors occurred during mapping process");
-            taskExceptions.forEach(exception::addSuppressed);
+        taskExceptions.waitUntilComplete();
+
+        final RuntimeException exception = new RuntimeException("Errors occurred during mapping process");
+        taskExceptions.forEach(e -> {
+            if (e != null) {
+                exception.addSuppressed(e);
+            }
+        });
+        if (exception.getSuppressed().length != 0) {
             throw exception;
         }
 
@@ -146,10 +156,14 @@ public class ParallelMapperImpl implements ParallelMapper {
             list.add(value);
         }
 
-        synchronized List<T> asList() throws InterruptedException {
+        synchronized void waitUntilComplete() throws InterruptedException {
             while (remaining > 0) {
                 wait();
             }
+        }
+
+        synchronized List<T> asList() throws InterruptedException {
+            waitUntilComplete();
             return list;
         }
 
