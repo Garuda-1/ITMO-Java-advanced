@@ -95,6 +95,24 @@ public class IterativeParallelism implements AdvancedIP {
         return runIP(threads, list, batchAndReduceJob, batchAndReduceJob);
     }
 
+    private <T, B, R> List<B> runIPWithoutMapper(int threads, final List<List<T>> batches,
+                                                 final Function<Stream<T>, B> batchJob) throws InterruptedException {
+        List<B> batchResults = new ArrayList<>(Collections.nCopies(threads, null));
+        final List<Thread> workers = new ArrayList<>();
+
+        for (int index = 0; index < threads; index++) {
+            final int threadIndex = index;
+            final Thread thread = new Thread(
+                    () -> batchResults.set(threadIndex, batchJob.apply(batches.get(threadIndex).stream())));
+            workers.add(thread);
+            thread.start();
+        }
+
+        joinAll(workers, false);
+
+        return batchResults;
+    }
+
     private <T, B, R> R runIP(int threads, final List<T> list, final Function<Stream<T>, B> batchJob,
                                      final Function<Stream<B>, R> reduceFunction) throws InterruptedException {
         final List<List<T>> batches = getListPerThreadDistribution(threads, list);
@@ -102,19 +120,7 @@ public class IterativeParallelism implements AdvancedIP {
         final List<B> batchResults;
 
         if (parallelMapper == null) {
-            batchResults = new ArrayList<>(Collections.nCopies(threads, null));
-
-            final List<Thread> workers = new ArrayList<>();
-
-            for (int index = 0; index < threads; index++) {
-                final int threadIndex = index;
-                final Thread thread = new Thread(
-                        () -> batchResults.set(threadIndex, batchJob.apply(batches.get(threadIndex).stream())));
-                workers.add(thread);
-                thread.start();
-            }
-
-            joinAll(workers, false);
+            batchResults = runIPWithoutMapper(threads, batches, batchJob);
         } else {
             batchResults = parallelMapper.map(batchJob,
                     batches.stream().map(List::stream).collect(Collectors.toList()));
