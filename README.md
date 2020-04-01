@@ -1,15 +1,15 @@
 Этот репозиторий будет склонирован для каждого студента и доступен по адресу
-`http://ctddev.ifmo.ru:25231/git/<user>/java-advanced-2020-solutions`, где `<user>` —
-имя пользователя и пароль, которые вам пришлют на `@niuitmo.ru`
+`https://www.kgeorgiy.info/git-students/<USER>/java-advanced-2020-solutions`,
+где `<USER>` — имя пользователя и пароль, которые вам прислали на `@niuitmo.ru`
 
 Для сдачи домашних заданий
  * Клонируйте ваш личный репозиторий
-    * `git clone http://ctddev.ifmo.ru:25231/git/<user>/java-advanced-2020-solutions`
+    * `git clone https://www.kgeorgiy.info/git-students/<USER>/java-advanced-2020-solutions`
     * У личных репозиториев __нет__ web-интерфейса, используйте инструменты командной строки.
  * Добавьте ссылку на исходный репозиторий
     * `git remote add source https://www.kgeorgiy.info/git/geo/java-advanced-2020-solutions`
     * По мере появления новых домашних заданий в исходном репозитории будут появляться заготовки решений
-      забирайте из через `git pull source`.
+      забирайте из через `git pull source master`.
  * Переименуйте пакет `ru.ifmo.rain.__last_name__`, заменив
    `__last_name__` на вашу фамилию.
     * В остальном сохраняйте текущую структуру каталогов и имена файлов.
