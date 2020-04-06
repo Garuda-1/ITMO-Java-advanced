@@ -10,6 +10,12 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.*;
 
+/**
+ * Breadth-first search (BFS) over web implementation.
+ *
+ * @author Ian Dolzhanskii (yan.dolganskiy@mail.ru)
+ * @version 0.9
+ */
 class BfsWebCrawler {
     private final Set<String> downloaded = ConcurrentHashMap.newKeySet();
     private final Map<String, IOException> errors = new ConcurrentHashMap<>();
@@ -23,6 +29,16 @@ class BfsWebCrawler {
     private final ExecutorService extractorsExecutorService;
     private final ExecutorService downloadersExecutorService;
 
+    /**
+     * Instance constructor. Commences search upon instantiation.
+     *
+     * @param initialLink URL link to start crawling from
+     * @param depth Search depth
+     * @param perHost Maximum number of concurrent downloads from unique host
+     * @param downloader Implementation of {@link Downloader} interface to use for page downloading
+     * @param extractorsExecutorService Pool of streams designed to perform links extraction operations
+     * @param downloadersExecutorService Pool of streams designed to perform files downloading operations
+     */
     BfsWebCrawler(String initialLink, int depth, int perHost, Downloader downloader,
                   ExecutorService extractorsExecutorService, ExecutorService downloadersExecutorService) {
         this.perHost = perHost;
@@ -34,6 +50,11 @@ class BfsWebCrawler {
         bfs(depth);
     }
 
+    /**
+     * Returns search result, containing list of successfully visited URLs and map of erroneous URLs with erro messages.
+     *
+     * @return Structure containing mentioned above data
+     */
     Result collectResult() {
         return new Result(new ArrayList<>(downloaded), errors);
     }

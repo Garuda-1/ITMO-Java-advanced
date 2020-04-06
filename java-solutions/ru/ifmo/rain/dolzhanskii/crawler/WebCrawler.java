@@ -10,12 +10,27 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.*;
 
+/**
+ * Implementation of {@link Crawler} using breadth-first search (BFS). This file is a public shell of implementation.
+ *
+ * @author Ian Dolzhanskii (yan.dolganskiy@mail.ru)
+ * @version 0.9
+ * @see BfsWebCrawler
+ */
 public class WebCrawler implements Crawler {
     private final Downloader downloader;
     private final ExecutorService extractorsExecutorService;
     private final ExecutorService downloadersExecutorService;
     private final int perHost;
 
+    /**
+     * Instance constructor which allows defining critical variables.
+     *
+     * @param downloader Implementation of {@link Downloader} interface to use for page downloading
+     * @param downloaders Maximum number of concurrent download operations
+     * @param extractors Maximum number of concurrent links extraction operations
+     * @param perHost Maximum number of concurrent files downloads from unique host
+     */
     @SuppressWarnings("WeakerAccess")
     public WebCrawler(Downloader downloader, int downloaders, int extractors, int perHost) {
         this.downloader = downloader;
@@ -42,6 +57,16 @@ public class WebCrawler implements Crawler {
         }
     }
 
+    /**
+     * Main method to provide console interface.
+     *
+     * Usage format: {@code WebCrawler url [depth [downloads [extractors [perHost]]]]}
+     *
+     * Instantiates {@link WebCrawler} provided with given arguments from the command line. All optional arguments
+     * default value is set to {@code 1}. {@link CachingDownloader} implementation of {@link Downloader} is used.
+     *
+     * @param args Command line arguments
+     */
     public static void main(String[] args) {
         if (args == null || args.length == 0 || args.length > 5 || Arrays.stream(args).anyMatch(Objects::isNull)) {
             System.out.println("Usage: WebCrawler url [depth [downloads [extractors [perHost]]]]");
