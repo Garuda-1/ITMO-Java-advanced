@@ -42,10 +42,9 @@ public class IterativeParallelism implements AdvancedIP {
      * Joins to threads and handles thrown exceptions.
      *
      * @param workers List of threads to join to
-     * @param suppressExceptions Flag to define whether generate exception including suppressed ones from threads or not
      * @throws InterruptedException Exception concluding all throws exceptions by threads
      */
-    static void joinAll(final List<Thread> workers, final boolean suppressExceptions) throws InterruptedException {
+    private static void joinAll(final List<Thread> workers) throws InterruptedException {
         final int threads = workers.size();
         for (int i = 0; i < threads; i++) {
             try {
@@ -64,9 +63,7 @@ public class IterativeParallelism implements AdvancedIP {
                         j--;
                     }
                 }
-                if (!suppressExceptions) {
-                    throw exception;
-                }
+                throw exception;
             }
         }
     }
@@ -109,7 +106,7 @@ public class IterativeParallelism implements AdvancedIP {
             thread.start();
         }
 
-        joinAll(workers, false);
+        joinAll(workers);
 
         return batchResults;
     }
