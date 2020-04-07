@@ -51,7 +51,8 @@ class BfsWebCrawler {
     }
 
     /**
-     * Returns search result, containing list of successfully visited URLs and map of erroneous URLs with erro messages.
+     * Returns search result, containing list of successfully visited URLs and map of erroneous URLs with
+     * error messages.
      *
      * @return Structure containing mentioned above data
      */
