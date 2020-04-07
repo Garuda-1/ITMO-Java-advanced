@@ -35,7 +35,7 @@ public class ParallelMapperImpl implements ParallelMapper {
         final Runnable workerRoutine = () -> {
             try {
                 while (!Thread.interrupted()) {
-                    taskQueue.getNext().run();
+                    taskQueue.getNextTask().run();
                 }
             } catch (InterruptedException e) {
                 // Ignored
@@ -61,10 +61,10 @@ public class ParallelMapperImpl implements ParallelMapper {
      */
     @Override
     public <T, R> List<R> map(Function<? super T, ? extends R> function, List<? extends T> list) throws InterruptedException {
-        CancellableTask<T, R> newTask;
+        CancellableMappingTask<T, R> newTask;
 
         synchronized (this) {
-            taskQueue.addTask(newTask = new CancellableTask<>(function, list));
+            taskQueue.addTask(newTask = new CancellableMappingTask<>(function, list));
         }
 
         return newTask.process();
@@ -77,7 +77,7 @@ public class ParallelMapperImpl implements ParallelMapper {
     public void close() {
         workers.forEach(Thread::interrupt);
         synchronized (this) {
-            taskQueue.forEach(CancellableTask::cancelExecution);
+            taskQueue.forEach(CancellableMappingTask::cancelExecution);
         }
         workers.forEach(thread -> {
             while (true) {
@@ -92,21 +92,21 @@ public class ParallelMapperImpl implements ParallelMapper {
     }
 
     private class BlockingTaskQueue {
-        private Queue<CancellableTask> queue = new ArrayDeque<>();
+        private Queue<CancellableMappingTask> queue = new ArrayDeque<>();
 
-        synchronized void addTask(CancellableTask task) {
+        synchronized void addTask(CancellableMappingTask task) {
             queue.add(task);
             notifyAll();
         }
 
-        public synchronized void remove() throws InterruptedException {
+        synchronized void remove() throws InterruptedException {
             while (queue.isEmpty()) {
                 wait();
             }
             queue.remove();
         }
 
-        public synchronized Runnable getNext() throws InterruptedException {
+        synchronized Runnable getNextTask() throws InterruptedException {
             while (queue.isEmpty()) {
                 wait();
             }
@@ -117,12 +117,12 @@ public class ParallelMapperImpl implements ParallelMapper {
             return value;
         }
 
-        public synchronized void forEach(Consumer<CancellableTask> consumer) {
+        synchronized void forEach(Consumer<CancellableMappingTask> consumer) {
             queue.forEach(consumer);
         }
     }
 
-    private class CancellableTask<T, R> {
+    private class CancellableMappingTask<T, R> {
         private final Queue<Runnable> mappingTasks = new ArrayDeque<>();
         private final List<R> results;
         private final List<RuntimeException> errors = new ArrayList<>();
@@ -131,7 +131,7 @@ public class ParallelMapperImpl implements ParallelMapper {
         private int awaitingStart;
         private int awaitingCompletion;
 
-        CancellableTask(Function<? super T, ? extends R> mappingFunction, List<? extends T> input) {
+        CancellableMappingTask(Function<? super T, ? extends R> mappingFunction, List<? extends T> input) {
             this.results = new ArrayList<>(Collections.nCopies(input.size(), null));
             this.awaitingStart = this.awaitingCompletion = input.size();
 
@@ -174,7 +174,7 @@ public class ParallelMapperImpl implements ParallelMapper {
             return mappingTasks.poll();
         }
 
-        boolean isFullyStarted() {
+        synchronized boolean isFullyStarted() {
             return awaitingStart == 0;
         }
 
@@ -194,163 +194,4 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         }
     }
-//    private List<Thread> workers;
-//    private final Queue<Runnable> tasks;
-//
-//    /**
-//     * Basic constructor. Creates given number of threads and initializes tasks queue.
-//     *
-//     * @param threads Number of threads to distribute tasks among
-//     */
-//    public ParallelMapperImpl(final int threads) {
-//        if (threads <= 0) {
-//            throw new IllegalArgumentException("Number of threads cannot be negative");
-//        }
-//
-//        tasks = new ArrayDeque<>();
-//
-//        final Runnable workerRoutine = () -> {
-//            try {
-//                while (!Thread.interrupted()) {
-//                    runTask();
-//                }
-//            } catch (final InterruptedException e) {
-//                // Ignored
-//            } finally {
-//                Thread.currentThread().interrupt();
-//            }
-//        };
-//
-//        workers = IntStream.range(0, threads).mapToObj(i -> new Thread(workerRoutine))
-//                .collect(Collectors.toCollection(ArrayList::new));
-//        workers.forEach(Thread::start);
-//    }
-//
-//    /**
-//     * Performs mapping query.
-//     *
-//     * @param function Map function to perform
-//     * @param list List of elements to map
-//     * @param <T> Map input type
-//     * @param <R> Map output type
-//     * @return List of mapped elements
-//     * @throws InterruptedException Transparent exception received from threads
-//     */
-//    @Override
-//    public <T, R> List<R> map(final Function<? super T, ? extends R> function, final List<? extends T> list)
-//            throws InterruptedException {
-//        final SynchronizedList<R> results = new SynchronizedList<>(list.size());
-//        final SynchronizedList<RuntimeException> taskExceptions = new SynchronizedList<>(list.size());
-//
-//        int index = 0;
-//
-//        for (final T target : list) {
-//            final int finalIndex = index++;
-//            addTask(() -> {
-//                R result = null;
-//                RuntimeException exception = null;
-//
-//                try {
-//                    result = function.apply(target);
-//                } catch (final RuntimeException e) {
-//                    exception = e;
-//                }
-//
-//                results.set(finalIndex, result);
-//                taskExceptions.set(finalIndex, exception);
-//            });
-//        }
-//
-//        taskExceptions.waitUntilComplete();
-//
-//        final RuntimeException exception = new RuntimeException("Errors occurred during mapping process");
-//        taskExceptions.forEach(e -> {
-//            if (e != null) {
-//                exception.addSuppressed(e);
-//            }
-//        });
-//        if (exception.getSuppressed().length != 0) {
-//            throw exception;
-//        }
-//
-//        return results.asList();
-//    }
-//
-//    /**
-//     * Terminates all generated threads.
-//     */
-//    @Override
-//    public void close() {
-//        workers.forEach(Thread::interrupt);
-//        try {
-//            joinAll(workers, true);
-//        } catch (final InterruptedException e) {
-//            // Ignored
-//        }
-//    }
-//
-//    private void addTask(final Runnable newTask) {
-//        synchronized (tasks) {
-//            tasks.add(newTask);
-//            tasks.notifyAll();
-//        }
-//    }
-//
-//    private void runTask() throws InterruptedException {
-//        final Runnable currentTask;
-//        synchronized (tasks) {
-//            while (tasks.isEmpty()) {
-//                tasks.wait();
-//            }
-//            currentTask = tasks.poll();
-//            tasks.notifyAll();
-//        }
-//        currentTask.run();
-//    }
-//
-//    private class SynchronizedList<T> {
-//        private final List<T> list;
-//        private int remaining;
-//
-//        SynchronizedList() {
-//            list = new ArrayList<>();
-//            remaining = 0;
-//        }
-//
-//        SynchronizedList(final int size) {
-//            list = new ArrayList<>(Collections.nCopies(size, null));
-//            remaining = list.size();
-//        }
-//
-//        synchronized void set(final int index, final T value) {
-//            list.set(index, value);
-//            remaining--;
-//            if (remaining == 0) {
-//                notify();
-//            }
-//        }
-//
-//        synchronized void add(final T value) {
-//            list.add(value);
-//        }
-//
-//        synchronized void waitUntilComplete() throws InterruptedException {
-//            while (remaining > 0) {
-//                wait();
-//            }
-//        }
-//
-//        synchronized List<T> asList() throws InterruptedException {
-//            waitUntilComplete();
-//            return list;
-//        }
-//
-//        synchronized boolean isEmpty() {
-//            return list.isEmpty();
-//        }
-//
-//        synchronized void forEach(Consumer<T> action) {
-//            list.forEach(action);
-//        }
-//    }
 }
