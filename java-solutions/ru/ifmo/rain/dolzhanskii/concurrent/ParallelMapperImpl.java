@@ -99,13 +99,6 @@ public class ParallelMapperImpl implements ParallelMapper {
             notifyAll();
         }
 
-        synchronized void remove() throws InterruptedException {
-            while (queue.isEmpty()) {
-                wait();
-            }
-            queue.remove();
-        }
-
         synchronized Runnable getNextTask() throws InterruptedException {
             while (queue.isEmpty()) {
                 wait();
@@ -164,7 +157,7 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         }
 
-        synchronized void cancelExecution() {
+        void cancelExecution() {
             this.isCancelled = true;
             notifyAll();
         }

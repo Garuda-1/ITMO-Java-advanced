@@ -131,7 +131,7 @@ class BfsWebCrawler {
             } catch (IOException e) {
                 errors.put(link, e);
             } finally {
-                layerPhaser.arrive();
+                layerPhaser.arriveAndDeregister();
             }
         });
     }
@@ -144,7 +144,7 @@ class BfsWebCrawler {
             } catch (IOException e) {
                 // Ignored
             } finally {
-                layerPhaser.arrive();
+                layerPhaser.arriveAndDeregister();
             }
         });
     }
