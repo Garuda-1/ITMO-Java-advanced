@@ -15,7 +15,8 @@ import java.util.stream.Stream;
  * Implementation of {@link ListIP} and {@link ScalarIP} interfaces using iterative parallelism.
  *
  * @author Ian Dolzhanskii (yan.dolganskiy@mail.ru)
- * @version 0.9
+ * @version 1.0
+ * @see ParallelMapper
  */
 @SuppressWarnings("unused")
 public class IterativeParallelism implements AdvancedIP {

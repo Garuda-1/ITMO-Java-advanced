@@ -30,7 +30,7 @@ class BfsWebCrawler {
     private final ExecutorService downloadersExecutorService;
 
     /**
-     * Instance constructor. Commences search upon instantiation.
+     * Instance constructor. Commences search immediately upon instantiation.
      *
      * @param initialLink URL link to start crawling from
      * @param depth Search depth
