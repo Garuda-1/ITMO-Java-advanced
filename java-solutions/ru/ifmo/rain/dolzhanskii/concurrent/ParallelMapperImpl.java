@@ -17,8 +17,9 @@ import java.util.stream.IntStream;
  */
 @SuppressWarnings("unused")
 public class ParallelMapperImpl implements ParallelMapper {
-    private List<Thread> workers;
+    private List<Thread> threads;
     private BlockingTaskQueue taskQueue;
+    private boolean shutdown = false;
 
     /**
      * Basic constructor. Creates given number of threads and initializes tasks queue.
@@ -44,9 +45,9 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         };
 
-        workers = IntStream.range(0, threads).mapToObj(i -> new Thread(workerRoutine))
+        this.threads = IntStream.range(0, threads).mapToObj(i -> new Thread(workerRoutine))
                 .collect(Collectors.toCollection(ArrayList::new));
-        workers.forEach(Thread::start);
+        this.threads.forEach(Thread::start);
     }
 
     /**
@@ -60,14 +61,18 @@ public class ParallelMapperImpl implements ParallelMapper {
      * @throws InterruptedException Transparent exception received from threads
      */
     @Override
-    public <T, R> List<R> map(Function<? super T, ? extends R> function, List<? extends T> list) throws InterruptedException {
-        CancellableMappingTask<T, R> newTask;
+    public <T, R> List<R> map(Function<? super T, ? extends R> function, List<? extends T> list)
+            throws InterruptedException {
+        MappingTaskBatch<T, R> newBatch;
 
         synchronized (this) {
-            taskQueue.addTask(newTask = new CancellableMappingTask<>(function, list));
+            if (shutdown) {
+                throw new IllegalStateException("Attempted to enqueue task to shut down mapper");
+            }
+            taskQueue.addTask(newBatch = new MappingTaskBatch<>(function, list));
         }
 
-        return newTask.process();
+        return newBatch.run();
     }
 
     /**
@@ -75,11 +80,12 @@ public class ParallelMapperImpl implements ParallelMapper {
      */
     @Override
     public void close() {
-        workers.forEach(Thread::interrupt);
         synchronized (this) {
-            taskQueue.forEach(CancellableMappingTask::cancelExecution);
+            shutdown = true;
+            threads.forEach(Thread::interrupt);
+            taskQueue.forEach(MappingTaskBatch::cancel);
         }
-        workers.forEach(thread -> {
+        threads.forEach(thread -> {
             while (true) {
                 try {
                     thread.join();
@@ -92,9 +98,9 @@ public class ParallelMapperImpl implements ParallelMapper {
     }
 
     private class BlockingTaskQueue {
-        private Queue<CancellableMappingTask> queue = new ArrayDeque<>();
+        private Queue<MappingTaskBatch> queue = new ArrayDeque<>();
 
-        synchronized void addTask(CancellableMappingTask task) {
+        synchronized void addTask(MappingTaskBatch task) {
             queue.add(task);
             notifyAll();
         }
@@ -103,28 +109,30 @@ public class ParallelMapperImpl implements ParallelMapper {
             while (queue.isEmpty()) {
                 wait();
             }
-            Runnable value = queue.element().getNextMappingTask();
+
+            Runnable task = queue.element().getNextMappingTask();
             if (queue.element().isFullyStarted()) {
                 queue.remove();
             }
-            return value;
+
+            return task;
         }
 
-        synchronized void forEach(Consumer<CancellableMappingTask> consumer) {
+        synchronized void forEach(Consumer<MappingTaskBatch> consumer) {
             queue.forEach(consumer);
         }
     }
 
-    private class CancellableMappingTask<T, R> {
+    private class MappingTaskBatch<T, R> {
         private final Queue<Runnable> mappingTasks = new ArrayDeque<>();
         private final List<R> results;
         private final List<RuntimeException> errors = new ArrayList<>();
 
-        private boolean isCancelled = false;
+        private boolean doneOrCancelled = false;
         private int awaitingStart;
         private int awaitingCompletion;
 
-        CancellableMappingTask(Function<? super T, ? extends R> mappingFunction, List<? extends T> input) {
+        MappingTaskBatch(Function<? super T, ? extends R> mappingFunction, List<? extends T> input) {
             this.results = new ArrayList<>(Collections.nCopies(input.size(), null));
             this.awaitingStart = this.awaitingCompletion = input.size();
 
@@ -142,8 +150,8 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         }
 
-        public synchronized List<R> process() throws InterruptedException {
-            while (!isCancelled) {
+        public synchronized List<R> run() throws InterruptedException {
+            while (!doneOrCancelled) {
                 wait();
             }
 
@@ -157,8 +165,8 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         }
 
-        void cancelExecution() {
-            this.isCancelled = true;
+        void cancel() {
+            this.doneOrCancelled = true;
             notifyAll();
         }
 
@@ -183,7 +191,7 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         private synchronized void registerCompletion() {
             if (--awaitingCompletion == 0) {
-                cancelExecution();
+                cancel();
             }
         }
     }
