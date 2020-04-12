@@ -49,12 +49,6 @@ public class WebCrawler implements Crawler {
     public void close() {
         extractorsExecutorService.shutdown();
         downloadersExecutorService.shutdown();
-        try {
-            extractorsExecutorService.awaitTermination(0, TimeUnit.MILLISECONDS);
-            downloadersExecutorService.awaitTermination(0, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            // Ignored
-        }
     }
 
     /**
@@ -82,8 +76,10 @@ public class WebCrawler implements Crawler {
 
             try (Crawler crawler = new WebCrawler(new CachingDownloader(), downloaders, extractors, perHost)) {
                 Result result = crawler.download(initialLink, depth);
+
                 System.out.println("Successfully visited pages:");
                 result.getDownloaded().forEach(System.out::println);
+
                 if (!result.getErrors().isEmpty()) {
                     System.out.println("Failed to visit pages:");
                     result.getErrors().keySet().forEach(System.out::println);

@@ -60,6 +60,59 @@ class BfsWebCrawler {
         return new Result(new ArrayList<>(downloaded), errors);
     }
 
+    private void bfs(int depth) {
+        for (int currentDepth = 0; currentDepth < depth; currentDepth++) {
+            final Phaser layerPhaser = new Phaser(1);
+            boolean keepCrawling = currentDepth < depth - 1;
+
+            Queue<String> previousLayerLinksQueue = new ArrayDeque<>(layerLinksQueue);
+            layerLinksQueue.clear();
+            previousLayerLinksQueue
+                    .stream().filter(visitedLinks::add)
+                    .forEach(link -> processLink(link, keepCrawling, layerPhaser));
+
+            layerPhaser.arriveAndAwaitAdvance();
+        }
+    }
+
+    private void processLink(String link, boolean keepCrawling, Phaser layerPhaser) {
+        String host;
+        try {
+            host = URLUtils.getHost(link);
+        } catch (MalformedURLException e) {
+            errors.put(link, e);
+            return;
+        }
+
+        HostProcessor hostProcessor = hostProcessorMap.computeIfAbsent(host, s -> new HostProcessor());
+        layerPhaser.register();
+
+        hostProcessor.submit(() -> {
+            try {
+                Document document = downloader.download(link);
+                downloaded.add(link);
+
+                if (keepCrawling) {
+                    layerPhaser.register();
+
+                    extractorsExecutorService.submit(() -> {
+                        try {
+                            layerLinksQueue.addAll(document.extractLinks());
+                        } catch (IOException e) {
+                            // Ignored
+                        } finally {
+                            layerPhaser.arriveAndDeregister();
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                errors.put(link, e);
+            } finally {
+                layerPhaser.arriveAndDeregister();
+            }
+        });
+    }
+
     private class HostProcessor {
         private final Queue<Runnable> tasksQueue;
         private int running;
@@ -69,7 +122,7 @@ class BfsWebCrawler {
             this.running = 0;
         }
 
-        synchronized void addTask(Runnable task) {
+        synchronized void submit(Runnable task) {
             tasksQueue.add(task);
             submitNextTask(false);
         }
@@ -92,61 +145,5 @@ class BfsWebCrawler {
                 }
             }
         }
-    }
-
-    private void bfs(int depth) {
-        for (int currentDepth = 0; currentDepth < depth; currentDepth++) {
-            final Phaser layerPhaser = new Phaser(1);
-            boolean keepCrawling = currentDepth < depth - 1;
-
-            List<String> layerLinks = new ArrayList<>(layerLinksQueue);
-
-            layerLinksQueue.clear();
-
-            layerLinks
-                    .stream().filter(visitedLinks::add)
-                    .forEach(link -> enqueueDownload(link, keepCrawling, layerPhaser));
-
-            layerPhaser.arriveAndAwaitAdvance();
-        }
-    }
-
-    private void enqueueDownload(String link, boolean keepCrawling, Phaser layerPhaser) {
-        String host;
-        try {
-            host = URLUtils.getHost(link);
-        } catch (MalformedURLException e) {
-            errors.put(link, e);
-            return;
-        }
-
-        HostProcessor hostProcessor = hostProcessorMap.computeIfAbsent(host, s -> new HostProcessor());
-        layerPhaser.register();
-        hostProcessor.addTask(() -> {
-            try {
-                Document document = downloader.download(link);
-                downloaded.add(link);
-                if (keepCrawling) {
-                    enqueueExtraction(document, layerPhaser);
-                }
-            } catch (IOException e) {
-                errors.put(link, e);
-            } finally {
-                layerPhaser.arriveAndDeregister();
-            }
-        });
-    }
-
-    private void enqueueExtraction(Document document, Phaser layerPhaser) {
-        layerPhaser.register();
-        extractorsExecutorService.submit(() -> {
-            try {
-                layerLinksQueue.addAll(document.extractLinks());
-            } catch (IOException e) {
-                // Ignored
-            } finally {
-                layerPhaser.arriveAndDeregister();
-            }
-        });
     }
 }
