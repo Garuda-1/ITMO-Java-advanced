@@ -11,6 +11,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static ru.ifmo.rain.dolzhanskii.hello.HelloUDPUtils.log;
+
 public class HelloUDPClient implements HelloClient {
     @Override
     public void run(String host, int port, String prefix, int threads, int requests) {
@@ -24,16 +26,15 @@ public class HelloUDPClient implements HelloClient {
             clientService.shutdown();
             clientService.awaitTermination(5 * threads * requests, TimeUnit.SECONDS);
         } catch (UnknownHostException e) {
-            log(logType.ERROR, "Failed to resolve host");
+            log(HelloUDPUtils.logType.ERROR, "Failed to resolve host");
         } catch (InterruptedException e) {
-            log(logType.ERROR, "Method had been interrupted");
+            log(HelloUDPUtils.logType.ERROR, "Method had been interrupted");
         }
     }
 
     private void spamRequests(SocketAddress hostSocket, String prefix, int threadId, int requests) {
         try (DatagramSocket socket = new DatagramSocket()) {
             int bufferSizeRx = socket.getReceiveBufferSize();
-            socket.setSoTimeout(200);
 
             for (int request = 0; request < requests; request++) {
                 String message = prefix + threadId + '_' + request;
@@ -42,14 +43,15 @@ public class HelloUDPClient implements HelloClient {
                 int attempt = 0;
 
                 while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
-                    log(logType.INFO, threadId, String.format("Sending message (attempt %d): '%s'", ++attempt, message));
+                    log(HelloUDPUtils.logType.INFO, threadId,
+                            String.format("Sending message (attempt %d): '%s'", ++attempt, message));
                     String response;
 
                     try {
                         DatagramPacket packetTx = new DatagramPacket(payload, payload.length, hostSocket);
                         socket.send(packetTx);
                     } catch (IOException e) {
-                        log(logType.ERROR, threadId, "Error occurred during attempt to send");
+                        log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
                     try {
@@ -58,30 +60,17 @@ public class HelloUDPClient implements HelloClient {
                         response = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
                                 StandardCharsets.UTF_8);
                     } catch (IOException e) {
-                        log(logType.ERROR, threadId, "Error occurred during attempt to receive");
+                        log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");
                         continue;
                     }
 
-                    log(logType.INFO, threadId, String.format("Received message: '%s'", response));
+                    log(HelloUDPUtils.logType.INFO, threadId, String.format("Received message: '%s'", response));
                     break;
                 }
             }
         } catch (SocketException e) {
-            log(logType.ERROR, "Socket failure, connection lost");
+            log(HelloUDPUtils.logType.ERROR, "Socket failure, connection lost");
         }
-    }
-
-    private enum logType {
-        INFO,
-        ERROR
-    }
-
-    private void log(logType type, String message) {
-        System.out.format("%s: \t%s%n", type.toString(), message);
-    }
-
-    private void log(logType type, int threadId, String message) {
-        System.out.format("%s: \tThread %d \t%s%n", type.toString(), threadId, message);
     }
 
     public static void main(String[] args) {
