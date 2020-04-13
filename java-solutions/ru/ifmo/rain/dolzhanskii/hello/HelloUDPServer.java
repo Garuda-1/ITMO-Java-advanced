@@ -7,12 +7,14 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class HelloUDPServer implements HelloServer {
-    static int TERMINATION_AWAIT = 1;
+    private static int TERMINATION_AWAIT = 1;
 
     private ExecutorService listener;
     private ExecutorService responders;
@@ -22,8 +24,9 @@ public class HelloUDPServer implements HelloServer {
     public void start(int port, int threads) {
         try {
             socket = new DatagramSocket(port);
-            responders = Executors.newFixedThreadPool(threads);
             int bufferSizeRx = socket.getReceiveBufferSize();
+
+            responders = Executors.newFixedThreadPool(threads);
             listener = Executors.newSingleThreadExecutor();
             listener.submit(() -> listen(socket, bufferSizeRx));
         } catch (SocketException e) {
@@ -33,15 +36,14 @@ public class HelloUDPServer implements HelloServer {
 
     @Override
     public void close() {
-        listener.shutdown();
         responders.shutdown();
+        listener.shutdown();
+        socket.close();
         try {
             listener.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
             responders.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             // Ignored
-        } finally {
-            socket.close();
         }
     }
 
@@ -82,5 +84,26 @@ public class HelloUDPServer implements HelloServer {
         }
 
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Message sent");
+    }
+
+    public static void main(String[] args) {
+        if (args == null || args.length != 2) {
+            System.out.println("Usage: HelloUDPServer port threads_count");
+            return;
+        }
+
+        if (Arrays.stream(args).anyMatch(Objects::isNull)) {
+            System.err.println("Null arguments are not allowed");
+            return;
+        }
+
+        try {
+            int port = Integer.parseInt(args[0]);
+            int threads = Integer.parseInt(args[1]);
+
+            new HelloUDPServer().start(port, threads);
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
+        }
     }
 }
