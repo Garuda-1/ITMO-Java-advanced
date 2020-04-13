@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class HelloUDPServer implements HelloServer {
-    private static final int TERMINATION_AWAIT = 1;
+    static int TERMINATION_AWAIT = 1;
 
     private ExecutorService listener;
     private ExecutorService responders;
@@ -47,7 +47,7 @@ public class HelloUDPServer implements HelloServer {
 
     private void listen(DatagramSocket socket, int bufferSizeRx) {
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
-            final DatagramPacket packetRx = new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx);
+            final DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx);
 
             try {
                 socket.receive(packetRx);
@@ -68,8 +68,7 @@ public class HelloUDPServer implements HelloServer {
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Received message: " + request);
 
         String response = "Hello, " + request;
-        byte[] payload = response.getBytes(StandardCharsets.UTF_8);
-        DatagramPacket packetTx = new DatagramPacket(payload, payload.length, packetRx.getSocketAddress());
+        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(response, packetRx.getSocketAddress());
 
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Sending message: " + response);
 

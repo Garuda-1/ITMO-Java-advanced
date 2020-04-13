@@ -14,17 +14,22 @@ import java.util.concurrent.TimeUnit;
 import static ru.ifmo.rain.dolzhanskii.hello.HelloUDPUtils.log;
 
 public class HelloUDPClient implements HelloClient {
+    static int TERMINATION_AWAIT = 3;
+    private static final int SOCKET_TIMEOUT = 200;
+
     @Override
     public void run(String host, int port, String prefix, int threads, int requests) {
         try {
             SocketAddress hostSocket = new InetSocketAddress(InetAddress.getByName(host), port);
             ExecutorService clientService = Executors.newFixedThreadPool(threads);
+
             for (int i = 0; i < threads; i++) {
                 int threadId = i;
                 clientService.submit(() -> spamRequests(hostSocket, prefix, threadId, requests));
             }
+
             clientService.shutdown();
-            clientService.awaitTermination(5 * threads * requests, TimeUnit.SECONDS);
+            clientService.awaitTermination(TERMINATION_AWAIT * threads * requests, TimeUnit.SECONDS);
         } catch (UnknownHostException e) {
             log(HelloUDPUtils.logType.ERROR, "Failed to resolve host");
         } catch (InterruptedException e) {
@@ -35,27 +40,27 @@ public class HelloUDPClient implements HelloClient {
     private void spamRequests(SocketAddress hostSocket, String prefix, int threadId, int requests) {
         try (DatagramSocket socket = new DatagramSocket()) {
             int bufferSizeRx = socket.getReceiveBufferSize();
+            socket.setSoTimeout(SOCKET_TIMEOUT);
 
-            for (int request = 0; request < requests; request++) {
-                String message = prefix + threadId + '_' + request;
-                byte[] payload = message.getBytes(StandardCharsets.UTF_8);
+            for (int requestId = 0; requestId < requests; requestId++) {
+                String request = prefix + threadId + '_' + requestId;
 
                 int attempt = 0;
 
                 while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
                     log(HelloUDPUtils.logType.INFO, threadId,
-                            String.format("Sending message (attempt %d): '%s'", ++attempt, message));
+                            String.format("Sending message (attempt %d): '%s'", ++attempt, request));
                     String response;
 
                     try {
-                        DatagramPacket packetTx = new DatagramPacket(payload, payload.length, hostSocket);
+                        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
                         socket.send(packetTx);
                     } catch (IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
                     try {
-                        DatagramPacket packetRx = new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx, hostSocket);
+                        DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
                         socket.receive(packetRx);
                         response = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
                                 StandardCharsets.UTF_8);
