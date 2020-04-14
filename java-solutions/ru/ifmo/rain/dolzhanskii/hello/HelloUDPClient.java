@@ -18,7 +18,7 @@ public class HelloUDPClient implements HelloClient {
     private static final int SOCKET_TIMEOUT = 200;
 
     @Override
-    public void run(String host, int port, String prefix, int threads, int requests) {
+    public void run(final String host, final int port, final String prefix, final int threads, final int requests) {
         try {
             SocketAddress hostSocket = new InetSocketAddress(InetAddress.getByName(host), port);
             ExecutorService clientService = Executors.newFixedThreadPool(threads);
@@ -37,9 +37,10 @@ public class HelloUDPClient implements HelloClient {
         }
     }
 
-    private void spamRequests(SocketAddress hostSocket, String prefix, int threadId, int requests) {
+    private void spamRequests(final SocketAddress hostSocket, final String prefix, final int threadId,
+                              final int requests) {
         try (DatagramSocket socket = new DatagramSocket()) {
-            int bufferSizeRx = socket.getReceiveBufferSize();
+            final int bufferSizeRx = socket.getReceiveBufferSize();
             socket.setSoTimeout(SOCKET_TIMEOUT);
             DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
 

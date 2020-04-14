@@ -96,12 +96,14 @@ class BfsWebCrawler {
                     layerPhaser.register();
 
                     extractorsExecutorService.submit(() -> {
-                        try {
-                            layerLinksQueue.addAll(document.extractLinks());
-                        } catch (IOException e) {
-                            // Ignored
-                        } finally {
-                            layerPhaser.arriveAndDeregister();
+                        synchronized (this) {
+                            try {
+                                layerLinksQueue.addAll(document.extractLinks());
+                            } catch (IOException e) {
+                                // Ignored
+                            } finally {
+                                layerPhaser.arriveAndDeregister();
+                            }
                         }
                     });
                 }
