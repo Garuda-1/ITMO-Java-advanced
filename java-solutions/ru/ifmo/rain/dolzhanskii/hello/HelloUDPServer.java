@@ -69,12 +69,8 @@ public class HelloUDPServer implements HelloServer {
         String request = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                 StandardCharsets.UTF_8);
 
-        HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Received message: " + request);
-
         String response = "Hello, " + request;
         HelloUDPUtils.stringToPacket(packet, response, packet.getSocketAddress());
-
-        HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Sending message: " + response);
 
         try {
             socket.send(packet);
@@ -84,8 +80,6 @@ public class HelloUDPServer implements HelloServer {
                         response);
             }
         }
-
-        HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Message sent");
     }
 
     public static void main(String[] args) {
