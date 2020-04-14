@@ -23,15 +23,15 @@ public class HelloUDPServer implements HelloServer {
     private DatagramSocket socket;
 
     @Override
-    public void start(int port, int threads) {
+    public void start(final int port, final int threads) {
         try {
             socket = new DatagramSocket(port);
-            int bufferSizeRx = socket.getReceiveBufferSize();
+            final int bufferSizeRx = socket.getReceiveBufferSize();
 
             responders = Executors.newFixedThreadPool(threads);
             listener = Executors.newSingleThreadExecutor();
             listener.submit(() -> listen(socket, bufferSizeRx));
-        } catch (SocketException e) {
+        } catch (final SocketException e) {
             HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Failed to start socket");
         }
     }
@@ -44,18 +44,18 @@ public class HelloUDPServer implements HelloServer {
         try {
             listener.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
             responders.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             // Ignored
         }
     }
 
-    private void listen(DatagramSocket socket, int bufferSizeRx) {
+    private void listen(final DatagramSocket socket, final int bufferSizeRx) {
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
             final DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx);
 
             try {
                 socket.receive(packetRx);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
                         "Error occurred during receiving packet from socket: " + e.getMessage());
                 continue;
@@ -65,20 +65,20 @@ public class HelloUDPServer implements HelloServer {
         }
     }
 
-    private void respond(DatagramSocket socket, DatagramPacket packetRx) {
-        String request = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
+    private void respond(final DatagramSocket socket, final DatagramPacket packetRx) {
+        final String request = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
                 StandardCharsets.UTF_8);
 
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Received message: " + request);
 
-        String response = "Hello, " + request;
-        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(response, packetRx.getSocketAddress());
+        final String response = "Hello, " + request;
+        final DatagramPacket packetTx = HelloUDPUtils.stringToPacket(response, packetRx.getSocketAddress());
 
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Sending message: " + response);
 
         try {
             socket.send(packetTx);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             if (!socket.isClosed()) {
                 HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Error occurred in attempt to send response: " +
                         response);
@@ -88,7 +88,7 @@ public class HelloUDPServer implements HelloServer {
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Message sent");
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args == null || args.length != 2) {
             System.out.println("Usage: HelloUDPServer port threads_count");
             return;
@@ -99,18 +99,18 @@ public class HelloUDPServer implements HelloServer {
             return;
         }
 
-        try (HelloUDPServer server = new HelloUDPServer()) {
-            int port = Integer.parseInt(args[0]);
-            int threads = Integer.parseInt(args[1]);
+        try (final HelloUDPServer server = new HelloUDPServer()) {
+            final int port = Integer.parseInt(args[0]);
+            final int threads = Integer.parseInt(args[1]);
 
             server.start(port, threads);
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("Server has been started. Press any key to terminate");
             reader.readLine();
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("IO error occurred: " + e.getMessage());
         }
     }

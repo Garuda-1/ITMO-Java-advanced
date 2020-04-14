@@ -14,57 +14,57 @@ import java.util.concurrent.TimeUnit;
 import static ru.ifmo.rain.dolzhanskii.hello.HelloUDPUtils.log;
 
 public class HelloUDPClient implements HelloClient {
-    static int TERMINATION_AWAIT = 3;
+    static final int TERMINATION_AWAIT = 3;
     private static final int SOCKET_TIMEOUT = 200;
 
     @Override
-    public void run(String host, int port, String prefix, int threads, int requests) {
+    public void run(final String host, final int port, final String prefix, final int threads, final int requests) {
         try {
-            SocketAddress hostSocket = new InetSocketAddress(InetAddress.getByName(host), port);
-            ExecutorService clientService = Executors.newFixedThreadPool(threads);
+            final SocketAddress hostSocket = new InetSocketAddress(InetAddress.getByName(host), port);
+            final ExecutorService clientService = Executors.newFixedThreadPool(threads);
 
             for (int i = 0; i < threads; i++) {
-                int threadId = i;
+                final int threadId = i;
                 clientService.submit(() -> spamRequests(hostSocket, prefix, threadId, requests));
             }
 
             clientService.shutdown();
             clientService.awaitTermination(TERMINATION_AWAIT * threads * requests, TimeUnit.SECONDS);
-        } catch (UnknownHostException e) {
+        } catch (final UnknownHostException e) {
             log(HelloUDPUtils.logType.ERROR, "Failed to resolve host");
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             log(HelloUDPUtils.logType.ERROR, "Method had been interrupted");
         }
     }
 
-    private void spamRequests(SocketAddress hostSocket, String prefix, int threadId, int requests) {
-        try (DatagramSocket socket = new DatagramSocket()) {
-            int bufferSizeRx = socket.getReceiveBufferSize();
+    private void spamRequests(final SocketAddress hostSocket, final String prefix, final int threadId, final int requests) {
+        try (final DatagramSocket socket = new DatagramSocket()) {
+            final int bufferSizeRx = socket.getReceiveBufferSize();
             socket.setSoTimeout(SOCKET_TIMEOUT);
 
             for (int requestId = 0; requestId < requests; requestId++) {
-                String request = prefix + threadId + '_' + requestId;
+                final String request = prefix + threadId + '_' + requestId;
 
                 int attempt = 0;
 
                 while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
                     log(HelloUDPUtils.logType.INFO, threadId,
                             String.format("Sending message (attempt %d): '%s'", ++attempt, request));
-                    String response;
+                    final String response;
 
                     try {
-                        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
+                        final DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
                         socket.send(packetTx);
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
                     try {
-                        DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
+                        final DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
                         socket.receive(packetRx);
                         response = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
                                 StandardCharsets.UTF_8);
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");
                         continue;
                     }
@@ -78,12 +78,12 @@ public class HelloUDPClient implements HelloClient {
                     }
                 }
             }
-        } catch (SocketException e) {
+        } catch (final SocketException e) {
             log(HelloUDPUtils.logType.ERROR, "Socket failure, connection lost");
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args == null || args.length != 5) {
             System.out.println("Usage: HelloUDPClient [URL|IP] port request_prefix threads_count requests_count");
             return;
@@ -95,12 +95,12 @@ public class HelloUDPClient implements HelloClient {
         }
 
         try {
-            int port = Integer.parseInt(args[1]);
-            int threads = Integer.parseInt(args[3]);
-            int requests = Integer.parseInt(args[4]);
+            final int port = Integer.parseInt(args[1]);
+            final int threads = Integer.parseInt(args[3]);
+            final int requests = Integer.parseInt(args[4]);
 
             new HelloUDPClient().run(args[0], port, args[2], threads, requests);
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
         }
     }
