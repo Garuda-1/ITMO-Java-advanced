@@ -47,7 +47,7 @@ public class HelloUDPClient implements HelloClient {
 
                 int attempt = 0;
 
-                while (!socket.isClosed() && !Thread.currentThread().isInterrupted() && attempt < 20) {
+                while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
                     log(HelloUDPUtils.logType.INFO, threadId,
                             String.format("Sending message (attempt %d): '%s'", ++attempt, request));
                     String response;
@@ -69,8 +69,12 @@ public class HelloUDPClient implements HelloClient {
                         continue;
                     }
                     if (HelloUDPUtils.validate(response, threadId, requestId)) {
-                        log(HelloUDPUtils.logType.INFO, threadId, String.format("Received message: '%s'", response));
+                        log(HelloUDPUtils.logType.INFO, threadId,
+                                String.format("Received valid message: '%s'", response));
                         break;
+                    } else {
+                        log(HelloUDPUtils.logType.INFO, threadId,
+                                String.format("Received invalid message: '%s'", response));
                     }
                 }
             }
