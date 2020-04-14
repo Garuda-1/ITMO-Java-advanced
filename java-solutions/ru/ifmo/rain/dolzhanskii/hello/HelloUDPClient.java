@@ -41,7 +41,6 @@ public class HelloUDPClient implements HelloClient {
         try (DatagramSocket socket = new DatagramSocket()) {
             int bufferSizeRx = socket.getReceiveBufferSize();
             socket.setSoTimeout(SOCKET_TIMEOUT);
-            DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
 
             for (int requestId = 0; requestId < requests; requestId++) {
                 String request = prefix + threadId + '_' + requestId;
@@ -54,16 +53,16 @@ public class HelloUDPClient implements HelloClient {
                     String response;
 
                     try {
-                        HelloUDPUtils.stringToPacket(packet, request, hostSocket);
-                        socket.send(packet);
+                        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
+                        socket.send(packetTx);
                     } catch (IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
                     try {
-                        HelloUDPUtils.emptyPacket(packet, bufferSizeRx, hostSocket);
-                        socket.receive(packet);
-                        response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
+                        DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
+                        socket.receive(packetRx);
+                        response = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
                                 StandardCharsets.UTF_8);
                     } catch (IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");

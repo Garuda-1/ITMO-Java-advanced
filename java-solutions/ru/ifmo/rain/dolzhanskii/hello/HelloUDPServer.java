@@ -51,7 +51,7 @@ public class HelloUDPServer implements HelloServer {
 
     private void listen(DatagramSocket socket, int bufferSizeRx) {
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
-            final DatagramPacket packetRx = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
+            final DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx);
 
             try {
                 socket.receive(packetRx);
@@ -65,17 +65,19 @@ public class HelloUDPServer implements HelloServer {
         }
     }
 
-    private void respond(DatagramSocket socket, DatagramPacket packet) {
-        String request = new String(packet.getData(), packet.getOffset(), packet.getLength(),
+    private void respond(DatagramSocket socket, DatagramPacket packetRx) {
+        String request = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
                 StandardCharsets.UTF_8);
 
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Received message: " + request);
+
         String response = "Hello, " + request;
-        HelloUDPUtils.stringToPacket(packet, response, packet.getSocketAddress());
+        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(response, packetRx.getSocketAddress());
+
         HelloUDPUtils.log(HelloUDPUtils.logType.INFO, "Sending message: " + response);
 
         try {
-            socket.send(packet);
+            socket.send(packetTx);
         } catch (IOException e) {
             if (!socket.isClosed()) {
                 HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Error occurred in attempt to send response: " +
