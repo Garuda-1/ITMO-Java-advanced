@@ -34,15 +34,15 @@ public class WebCrawler implements Crawler {
      * @param perHost Maximum number of concurrent files downloads from unique host
      */
     @SuppressWarnings("WeakerAccess")
-    public WebCrawler(Downloader downloader, int downloaders, int extractors, int perHost) {
+    public WebCrawler(final Downloader downloader, final int downloaders, final int extractors, final int perHost) {
         this.downloader = downloader;
-        this.extractorsExecutorService = Executors.newFixedThreadPool(downloaders);
-        this.downloadersExecutorService = Executors.newFixedThreadPool(extractors);
+        this.extractorsExecutorService = Executors.newFixedThreadPool(extractors);
+        this.downloadersExecutorService = Executors.newFixedThreadPool(downloaders);
         this.perHost = perHost;
     }
 
     @Override
-    public Result download(String initialLink, int depth) {
+    public Result download(final String initialLink, final int depth) {
         return new BfsWebCrawler(initialLink, depth, perHost, downloader,
                 extractorsExecutorService, downloadersExecutorService).collectResult();
     }
@@ -54,7 +54,7 @@ public class WebCrawler implements Crawler {
         try {
             extractorsExecutorService.awaitTermination(AWAIT_TERMINATION, TimeUnit.SECONDS);
             downloadersExecutorService.awaitTermination(AWAIT_TERMINATION, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             // Ignored
         }
     }
@@ -69,21 +69,21 @@ public class WebCrawler implements Crawler {
      *
      * @param args Command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args == null || args.length == 0 || args.length > 5 || Arrays.stream(args).anyMatch(Objects::isNull)) {
             System.out.println("Usage: WebCrawler url [depth [downloads [extractors [perHost]]]]");
             return;
         }
 
         try {
-            String initialLink = args[0];
-            int depth = getIntArgOrDefault(args, 1);
-            int downloaders = getIntArgOrDefault(args, 2);
-            int extractors = getIntArgOrDefault(args, 3);
-            int perHost = getIntArgOrDefault(args, 4);
+            final String initialLink = args[0];
+            final int depth = getIntArgOrDefault(args, 1);
+            final int downloaders = getIntArgOrDefault(args, 2);
+            final int extractors = getIntArgOrDefault(args, 3);
+            final int perHost = getIntArgOrDefault(args, 4);
 
-            try (Crawler crawler = new WebCrawler(new CachingDownloader(), downloaders, extractors, perHost)) {
-                Result result = crawler.download(initialLink, depth);
+            try (final Crawler crawler = new WebCrawler(new CachingDownloader(), downloaders, extractors, perHost)) {
+                final Result result = crawler.download(initialLink, depth);
 
                 System.out.println("Successfully visited pages:");
                 result.getDownloaded().forEach(System.out::println);
@@ -92,15 +92,15 @@ public class WebCrawler implements Crawler {
                     System.out.println("Failed to visit pages:");
                     result.getErrors().keySet().forEach(System.out::println);
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 System.err.println("Failed to initialize downloader: " + e.getMessage());
             }
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             System.err.println("Invalid argument format: Integer argument expected");
         }
     }
 
-    private static int getIntArgOrDefault(String[] args, int index) {
+    private static int getIntArgOrDefault(final String[] args, final int index) {
         return index >= args.length ? 1 : Integer.parseInt(args[index]);
     }
 }
