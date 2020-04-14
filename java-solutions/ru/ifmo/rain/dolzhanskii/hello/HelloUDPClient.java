@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import static ru.ifmo.rain.dolzhanskii.hello.HelloUDPUtils.log;
 
 public class HelloUDPClient implements HelloClient {
-    static int TERMINATION_AWAIT = 3;
+    private static final int TERMINATION_AWAIT = 3;
     private static final int SOCKET_TIMEOUT = 200;
 
     @Override
@@ -41,6 +41,7 @@ public class HelloUDPClient implements HelloClient {
         try (DatagramSocket socket = new DatagramSocket()) {
             int bufferSizeRx = socket.getReceiveBufferSize();
             socket.setSoTimeout(SOCKET_TIMEOUT);
+            DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
 
             for (int requestId = 0; requestId < requests; requestId++) {
                 String request = prefix + threadId + '_' + requestId;
@@ -53,16 +54,18 @@ public class HelloUDPClient implements HelloClient {
                     String response;
 
                     try {
-                        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
-                        socket.send(packetTx);
+//                        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
+                        HelloUDPUtils.stringToPacket(packet, request, hostSocket);
+                        socket.send(packet);
                     } catch (IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
                     try {
-                        DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
-                        socket.receive(packetRx);
-                        response = new String(packetRx.getData(), packetRx.getOffset(), packetRx.getLength(),
+//                        DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
+                        HelloUDPUtils.emptyPacket(packet, bufferSizeRx, hostSocket);
+                        socket.receive(packet);
+                        response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                                 StandardCharsets.UTF_8);
                     } catch (IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");

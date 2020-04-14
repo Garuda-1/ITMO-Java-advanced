@@ -30,8 +30,29 @@ class HelloUDPUtils {
         ERROR
     }
 
+    private static int skipCharacters(int pos, String s, boolean skipDigits) {
+        for (; pos < s.length(); pos++) {
+            if (skipDigits ^ Character.isDigit(s.charAt(pos))) {
+                break;
+            }
+        }
+        return pos;
+    }
+
     static boolean validate(String s, int threadId, int requestId) {
-        return s.matches("[\\D]*" + threadId + "[\\D]*" + requestId + "[\\D]*");
+        String threadIdString = Integer.toString(threadId);
+        String requestIdString = Integer.toString(requestId);
+
+        int l1 = skipCharacters(0, s, false);
+        int r1 = skipCharacters(l1, s, true);
+        int l2 = skipCharacters(r1, s, false);
+        int r2 = skipCharacters(l2, s, true);
+
+        try {
+            return threadIdString.equals(s.substring(l1, r1)) && requestIdString.equals(s.substring(l2, r2));
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
     }
 
     static void log(logType type, String message) {
