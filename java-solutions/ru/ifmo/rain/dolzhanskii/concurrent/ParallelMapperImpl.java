@@ -17,8 +17,8 @@ import java.util.stream.IntStream;
  */
 @SuppressWarnings("unused")
 public class ParallelMapperImpl implements ParallelMapper {
-    private List<Thread> threads;
-    private BlockingTaskQueue taskQueue;
+    private final List<Thread> threads;
+    private final BlockingTaskQueue taskQueue;
     private boolean shutdown = false;
 
     /**
@@ -26,7 +26,7 @@ public class ParallelMapperImpl implements ParallelMapper {
      *
      * @param threads Number of threads to distribute tasks among
      */
-    public ParallelMapperImpl(int threads) {
+    public ParallelMapperImpl(final int threads) {
         if (threads <= 0) {
             throw new IllegalArgumentException("Number of threads cannot be negative");
         }
@@ -38,7 +38,7 @@ public class ParallelMapperImpl implements ParallelMapper {
                 while (!Thread.interrupted()) {
                     taskQueue.getNextTask().run();
                 }
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 // Ignored
             } finally {
                 Thread.currentThread().interrupt();
@@ -61,18 +61,19 @@ public class ParallelMapperImpl implements ParallelMapper {
      * @throws InterruptedException Transparent exception received from threads
      */
     @Override
-    public <T, R> List<R> map(Function<? super T, ? extends R> function, List<? extends T> list)
+    public <T, R> List<R> map(final Function<? super T, ? extends R> function, final List<? extends T> list)
             throws InterruptedException {
-        MappingTaskBatch<T, R> newBatch;
+        final MappingTaskBatch<T, R> newBatch;
 
         synchronized (this) {
             if (shutdown) {
                 throw new IllegalStateException("Attempted to enqueue task to shut down mapper");
             }
-            taskQueue.addTask(newBatch = new MappingTaskBatch<>(function, list));
+            newBatch = new MappingTaskBatch<>(function, list);
+            taskQueue.addTask(newBatch);
         }
 
-        return newBatch.run();
+        return newBatch.getResult();
     }
 
     /**
@@ -90,7 +91,7 @@ public class ParallelMapperImpl implements ParallelMapper {
                 try {
                     thread.join();
                     break;
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                     // Ignored
                 }
             }
@@ -98,11 +99,11 @@ public class ParallelMapperImpl implements ParallelMapper {
     }
 
     private class BlockingTaskQueue {
-        private Queue<MappingTaskBatch> queue = new ArrayDeque<>();
+        private final Queue<MappingTaskBatch<?, ?>> queue = new ArrayDeque<>();
 
-        synchronized void addTask(MappingTaskBatch task) {
+        synchronized void addTask(final MappingTaskBatch<?, ?> task) {
             queue.add(task);
-            notifyAll();
+            notify();
         }
 
         synchronized Runnable getNextTask() throws InterruptedException {
@@ -110,15 +111,16 @@ public class ParallelMapperImpl implements ParallelMapper {
                 wait();
             }
 
-            Runnable task = queue.element().getNextMappingTask();
-            if (queue.element().isFullyStarted()) {
+            final MappingTaskBatch<?, ?> head = queue.element();
+            final Runnable task = head.getNextMappingTask();
+            if (head.isFullyStarted()) {
                 queue.remove();
             }
 
             return task;
         }
 
-        synchronized void forEach(Consumer<MappingTaskBatch> consumer) {
+        synchronized void forEach(final Consumer<MappingTaskBatch<?, ?>> consumer) {
             queue.forEach(consumer);
         }
     }
@@ -132,17 +134,17 @@ public class ParallelMapperImpl implements ParallelMapper {
         private int awaitingStart;
         private int awaitingCompletion;
 
-        MappingTaskBatch(Function<? super T, ? extends R> mappingFunction, List<? extends T> input) {
+        MappingTaskBatch(final Function<? super T, ? extends R> mappingFunction, final List<? extends T> input) {
             this.results = new ArrayList<>(Collections.nCopies(input.size(), null));
             this.awaitingStart = this.awaitingCompletion = input.size();
 
             int index = 0;
-            for (T key : input) {
-                int finalIndex = index;
+            for (final T key : input) {
+                final int finalIndex = index;
                 mappingTasks.add(() -> {
                     try {
                         setResult(finalIndex, mappingFunction.apply(key));
-                    } catch (RuntimeException e) {
+                    } catch (final RuntimeException e) {
                         addError(e);
                     }
                 });
@@ -150,7 +152,7 @@ public class ParallelMapperImpl implements ParallelMapper {
             }
         }
 
-        public synchronized List<R> run() throws InterruptedException {
+        public synchronized List<R> getResult() throws InterruptedException {
             while (!doneOrCancelled) {
                 wait();
             }
@@ -158,10 +160,9 @@ public class ParallelMapperImpl implements ParallelMapper {
             if (errors.isEmpty()) {
                 return results;
             } else {
-                throw errors.stream().reduce((RuntimeException basic, RuntimeException other) -> {
-                    basic.addSuppressed(other);
-                    return basic;
-                }).get();
+                final RuntimeException first = errors.get(0);
+                errors.stream().skip(1).forEach(first::addSuppressed);
+                throw first;
             }
         }
 
@@ -176,15 +177,15 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
 
         synchronized boolean isFullyStarted() {
-            return awaitingStart == 0;
+            return awaitingStart <= 0;
         }
 
-        private synchronized void setResult(int index, R value) {
+        private synchronized void setResult(final int index, final R value) {
             results.set(index, value);
             registerCompletion();
         }
 
-        private synchronized void addError(RuntimeException e) {
+        private synchronized void addError(final RuntimeException e) {
             errors.add(e);
             registerCompletion();
         }
