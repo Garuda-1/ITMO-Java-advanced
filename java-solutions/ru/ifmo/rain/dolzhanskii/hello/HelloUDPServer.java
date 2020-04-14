@@ -2,7 +2,9 @@ package ru.ifmo.rain.dolzhanskii.hello;
 
 import info.kgeorgiy.java.advanced.hello.HelloServer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
@@ -97,13 +99,19 @@ public class HelloUDPServer implements HelloServer {
             return;
         }
 
-        try {
+        try (HelloUDPServer server = new HelloUDPServer()) {
             int port = Integer.parseInt(args[0]);
             int threads = Integer.parseInt(args[1]);
 
-            new HelloUDPServer().start(port, threads);
+            server.start(port, threads);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("Server has been started. Press any key to terminate");
+            reader.readLine();
         } catch (NumberFormatException e) {
             System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("IO error occurred: " + e.getMessage());
         }
     }
 }
