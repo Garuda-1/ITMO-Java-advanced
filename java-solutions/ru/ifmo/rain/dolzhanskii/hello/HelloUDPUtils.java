@@ -20,11 +20,6 @@ class HelloUDPUtils {
         return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx);
     }
 
-    enum logType {
-        INFO,
-        ERROR
-    }
-
     private static int skipCharacters(int pos, String s, boolean skipDigits) {
         for (; pos < s.length(); pos++) {
             if (skipDigits ^ Character.isDigit(s.charAt(pos))) {
@@ -32,6 +27,18 @@ class HelloUDPUtils {
             }
         }
         return pos;
+    }
+
+    private static boolean compareSubstring(String s, String t, int l, int r) {
+        if (r - l != s.length()) {
+            return false;
+        }
+        for (int i = l; i < r; i++) {
+            if (s.charAt(i - l) != t.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static boolean validate(String s, int threadId, int requestId) {
@@ -43,11 +50,12 @@ class HelloUDPUtils {
         int l2 = skipCharacters(r1, s, false);
         int r2 = skipCharacters(l2, s, true);
 
-        try {
-            return threadIdString.equals(s.substring(l1, r1)) && requestIdString.equals(s.substring(l2, r2));
-        } catch (IndexOutOfBoundsException e) {
-            return false;
-        }
+        return compareSubstring(threadIdString, s, l1, r1) && compareSubstring(requestIdString, s, l2, r2);
+    }
+
+    enum logType {
+        INFO,
+        ERROR
     }
 
     static void log(logType type, String message) {
