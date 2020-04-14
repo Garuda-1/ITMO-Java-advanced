@@ -47,7 +47,7 @@ public class HelloUDPClient implements HelloClient {
 
                 int attempt = 0;
 
-                while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
+                while (!socket.isClosed() && !Thread.currentThread().isInterrupted() && attempt < 20) {
                     log(HelloUDPUtils.logType.INFO, threadId,
                             String.format("Sending message (attempt %d): '%s'", ++attempt, request));
                     String response;
@@ -68,9 +68,10 @@ public class HelloUDPClient implements HelloClient {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");
                         continue;
                     }
-
-                    log(HelloUDPUtils.logType.INFO, threadId, String.format("Received message: '%s'", response));
-                    break;
+                    if (HelloUDPUtils.validate(response, threadId, requestId)) {
+                        log(HelloUDPUtils.logType.INFO, threadId, String.format("Received message: '%s'", response));
+                        break;
+                    }
                 }
             }
         } catch (SocketException e) {

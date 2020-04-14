@@ -23,6 +23,10 @@ class HelloUDPUtils {
         ERROR
     }
 
+    static boolean validate(String s, int threadId, int requestId) {
+        return s.matches("[\\D]*" + threadId + "[\\D]*" + requestId + "[\\D]*");
+    }
+
     static void log(logType type, String message) {
         System.out.format("%s: \t%s%n", type, message);
     }
