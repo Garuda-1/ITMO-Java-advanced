@@ -1,7 +1,6 @@
 package ru.ifmo.rain.dolzhanskii.hello;
 
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
@@ -15,10 +14,6 @@ class HelloUDPUtils {
     static void emptyPacket(DatagramPacket packet, int bufferSizeRx, SocketAddress destination) {
         packet.setData(new byte[bufferSizeRx], 0, bufferSizeRx);
         packet.setSocketAddress(destination);
-    }
-
-    static DatagramPacket createEmptyPacket(int bufferSizeRx, SocketAddress destination) {
-        return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx, destination);
     }
 
     static DatagramPacket createEmptyPacket(int bufferSizeRx) {

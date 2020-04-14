@@ -54,7 +54,6 @@ public class HelloUDPClient implements HelloClient {
                     String response;
 
                     try {
-//                        DatagramPacket packetTx = HelloUDPUtils.stringToPacket(request, hostSocket);
                         HelloUDPUtils.stringToPacket(packet, request, hostSocket);
                         socket.send(packet);
                     } catch (IOException e) {
@@ -62,7 +61,6 @@ public class HelloUDPClient implements HelloClient {
                         continue;
                     }
                     try {
-//                        DatagramPacket packetRx = HelloUDPUtils.emptyPacket(bufferSizeRx, hostSocket);
                         HelloUDPUtils.emptyPacket(packet, bufferSizeRx, hostSocket);
                         socket.receive(packet);
                         response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
