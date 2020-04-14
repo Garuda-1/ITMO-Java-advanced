@@ -18,6 +18,8 @@ import java.util.concurrent.*;
  * @see BfsWebCrawler
  */
 public class WebCrawler implements Crawler {
+    private static final int AWAIT_TERMINATION = 1;
+
     private final Downloader downloader;
     private final ExecutorService extractorsExecutorService;
     private final ExecutorService downloadersExecutorService;
@@ -49,6 +51,12 @@ public class WebCrawler implements Crawler {
     public void close() {
         extractorsExecutorService.shutdown();
         downloadersExecutorService.shutdown();
+        try {
+            extractorsExecutorService.awaitTermination(AWAIT_TERMINATION, TimeUnit.SECONDS);
+            downloadersExecutorService.awaitTermination(AWAIT_TERMINATION, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            // Ignored
+        }
     }
 
     /**

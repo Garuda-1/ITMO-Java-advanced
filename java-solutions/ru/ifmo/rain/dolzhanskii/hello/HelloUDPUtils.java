@@ -1,20 +1,27 @@
 package ru.ifmo.rain.dolzhanskii.hello;
 
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 class HelloUDPUtils {
-    static DatagramPacket stringToPacket(String s, SocketAddress destination) {
+    static void stringToPacket(DatagramPacket packet, String s, SocketAddress destination) {
         byte[] payload = s.getBytes(StandardCharsets.UTF_8);
-        return new DatagramPacket(payload, payload.length, destination);
+        packet.setData(payload, 0, payload.length);
+        packet.setSocketAddress(destination);
     }
 
-    static DatagramPacket emptyPacket(int bufferSizeRx, SocketAddress destination) {
+    static void emptyPacket(DatagramPacket packet, int bufferSizeRx, SocketAddress destination) {
+        packet.setData(new byte[bufferSizeRx], 0, bufferSizeRx);
+        packet.setSocketAddress(destination);
+    }
+
+    static DatagramPacket createEmptyPacket(int bufferSizeRx, SocketAddress destination) {
         return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx, destination);
     }
 
-    static DatagramPacket emptyPacket(int bufferSizeRx) {
+    static DatagramPacket createEmptyPacket(int bufferSizeRx) {
         return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx);
     }
 
