@@ -103,7 +103,7 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         synchronized void addTask(final MappingTaskBatch<?, ?> task) {
             queue.add(task);
-            notify();
+            notifyAll();
         }
 
         synchronized Runnable getNextTask() throws InterruptedException {
