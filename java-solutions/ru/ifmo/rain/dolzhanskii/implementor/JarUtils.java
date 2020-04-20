@@ -6,6 +6,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -45,27 +46,11 @@ class JarUtils {
      * @throws ImplerException In case compilation finished with non-zero return code
      */
     static void compileCode(final Class<?> token, final Path tmpDir) throws ImplerException {
-        final Path superPath;
+        final String subPath;
         try {
-            final CodeSource codeSource = token.getProtectionDomain().getCodeSource();
-            if (codeSource == null) {
-                // :NOTE: code source и source code две совсем разные вещи
-                throw new ImplerException("Failed to retrieve super class source code");
-            }
-            final URL sourceCodeUrl = codeSource.getLocation();
-            if (sourceCodeUrl == null) {
-                throw new ImplerException("Failed to retrieve super class code source location");
-            }
-            String sourceCodePath = sourceCodeUrl.getPath();
-            if (sourceCodePath.isEmpty()) {
-                throw new ImplerException("Failed to convert source code location");
-            }
-            if (sourceCodePath.startsWith("/")) {
-                sourceCodePath = sourceCodePath.substring(1);
-            }
-            superPath = Path.of(sourceCodePath);
-        } catch (final InvalidPathException e) {
-            throw new ImplerException("Failed to retrieve super class source code");
+            subPath = Path.of(token.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        } catch (URISyntaxException e) {
+            throw new ImplerException("Failed to retrieve location path");
         }
 
         final JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
@@ -75,7 +60,7 @@ class JarUtils {
 
         final String[] compilerArgs = {
                 "-cp",
-                tmpDir.toString() + File.pathSeparator + superPath.toString(),
+                subPath,
                 tmpDir.resolve(getImplementationPath(token, File.separator) + IMPL_SUFFIX + JAVA_EXTENSION).toString(),
         };
 
