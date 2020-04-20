@@ -146,6 +146,8 @@ public class ParallelMapperImpl implements ParallelMapper {
                         setResult(finalIndex, mappingFunction.apply(key));
                     } catch (final RuntimeException e) {
                         addError(e);
+                    } finally {
+                        registerCompletion();
                     }
                 });
                 index++;
@@ -168,7 +170,7 @@ public class ParallelMapperImpl implements ParallelMapper {
 
         void cancel() {
             this.doneOrCancelled = true;
-            notifyAll();
+            notify();
         }
 
         synchronized Runnable getNextMappingTask() {
@@ -181,13 +183,17 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
 
         private synchronized void setResult(final int index, final R value) {
+            if (doneOrCancelled) {
+                return;
+            }
             results.set(index, value);
-            registerCompletion();
         }
 
         private synchronized void addError(final RuntimeException e) {
+            if (doneOrCancelled) {
+                return;
+            }
             errors.add(e);
-            registerCompletion();
         }
 
         private synchronized void registerCompletion() {
