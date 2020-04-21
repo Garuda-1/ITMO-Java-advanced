@@ -14,12 +14,12 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 public class HelloUDPServer implements HelloServer {
     private static final int TERMINATION_AWAIT = 1;
 
-    private ExecutorService listener;
-    private ExecutorService responders;
+    private ExecutorService listeners;
     private DatagramSocket socket;
 
     @Override
@@ -28,56 +28,51 @@ public class HelloUDPServer implements HelloServer {
             socket = new DatagramSocket(port);
             int bufferSizeRx = socket.getReceiveBufferSize();
 
-            responders = Executors.newFixedThreadPool(threads);
-            listener = Executors.newSingleThreadExecutor();
-            listener.submit(() -> listen(socket, bufferSizeRx));
+            listeners = Executors.newFixedThreadPool(threads);
+
+            IntStream.range(0, threads).forEach(i -> listeners.submit(() -> listen(socket, bufferSizeRx)));
         } catch (SocketException e) {
-            HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Failed to start socket");
+            HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Failed to start socket: " + e.getMessage());
         }
     }
 
     @Override
     public void close() {
-        responders.shutdown();
-        listener.shutdown();
+        listeners.shutdown();
         socket.close();
         try {
-            listener.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
-            responders.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
+            listeners.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             // Ignored
         }
     }
 
     private void listen(DatagramSocket socket, int bufferSizeRx) {
-        while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
-            final DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
+        final DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
 
+        while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
             try {
                 socket.receive(packet);
             } catch (IOException e) {
-                HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
-                        "Error occurred during receiving packet from socket: " + e.getMessage());
+                if (!socket.isClosed()) {
+                    HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
+                            "Error occurred during receiving packet from socket: " + e.getMessage());
+                }
                 continue;
             }
 
-            responders.submit(() -> respond(socket, packet));
-        }
-    }
+            String request = new String(packet.getData(), packet.getOffset(), packet.getLength(),
+                    StandardCharsets.UTF_8);
+            String response = "Hello, " + request;
+            HelloUDPUtils.stringToPacket(packet, response, packet.getSocketAddress());
 
-    private void respond(DatagramSocket socket, DatagramPacket packet) {
-        String request = new String(packet.getData(), packet.getOffset(), packet.getLength(),
-                StandardCharsets.UTF_8);
-
-        String response = "Hello, " + request;
-        HelloUDPUtils.stringToPacket(packet, response, packet.getSocketAddress());
-
-        try {
-            socket.send(packet);
-        } catch (IOException e) {
-            if (!socket.isClosed()) {
-                HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Error occurred in attempt to send response: " +
-                        response);
+            try {
+                socket.send(packet);
+            } catch (IOException e) {
+                if (!socket.isClosed()) {
+                    HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
+                            "Error occurred in attempt to send response: " + new String(packet.getData()));
+                }
             }
         }
     }
