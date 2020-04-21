@@ -57,7 +57,7 @@ public class HelloUDPClient implements HelloClient {
                     try {
                         HelloUDPUtils.stringToPacket(packet, request, hostSocket);
                         socket.send(packet);
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
@@ -66,7 +66,7 @@ public class HelloUDPClient implements HelloClient {
                         socket.receive(packet);
                         response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                                 StandardCharsets.UTF_8);
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");
                         continue;
                     }
@@ -80,12 +80,12 @@ public class HelloUDPClient implements HelloClient {
                     }
                 }
             }
-        } catch (SocketException e) {
+        } catch (final SocketException e) {
             log(HelloUDPUtils.logType.ERROR, "Socket failure, connection lost");
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args == null || args.length != 5) {
             System.out.println("Usage: HelloUDPClient [URL|IP] port request_prefix threads_count requests_count");
             return;
@@ -97,12 +97,12 @@ public class HelloUDPClient implements HelloClient {
         }
 
         try {
-            int port = Integer.parseInt(args[1]);
-            int threads = Integer.parseInt(args[3]);
-            int requests = Integer.parseInt(args[4]);
+            final int port = Integer.parseInt(args[1]);
+            final int threads = Integer.parseInt(args[3]);
+            final int requests = Integer.parseInt(args[4]);
 
             new HelloUDPClient().run(args[0], port, args[2], threads, requests);
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
         }
     }

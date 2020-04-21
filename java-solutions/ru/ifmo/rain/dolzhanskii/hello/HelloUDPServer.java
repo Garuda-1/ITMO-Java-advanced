@@ -23,15 +23,15 @@ public class HelloUDPServer implements HelloServer {
     private DatagramSocket socket;
 
     @Override
-    public void start(int port, int threads) {
+    public void start(final int port, final int threads) {
         try {
             socket = new DatagramSocket(port);
-            int bufferSizeRx = socket.getReceiveBufferSize();
+            final int bufferSizeRx = socket.getReceiveBufferSize();
 
             listeners = Executors.newFixedThreadPool(threads);
 
             IntStream.range(0, threads).forEach(i -> listeners.submit(() -> listen(socket, bufferSizeRx)));
-        } catch (SocketException e) {
+        } catch (final SocketException e) {
             HelloUDPUtils.log(HelloUDPUtils.logType.ERROR, "Failed to start socket: " + e.getMessage());
         }
     }
@@ -42,18 +42,18 @@ public class HelloUDPServer implements HelloServer {
         socket.close();
         try {
             listeners.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             // Ignored
         }
     }
 
-    private void listen(DatagramSocket socket, int bufferSizeRx) {
+    private void listen(final DatagramSocket socket, final int bufferSizeRx) {
         final DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
 
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
             try {
                 socket.receive(packet);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 if (!socket.isClosed()) {
                     HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
                             "Error occurred during receiving packet from socket: " + e.getMessage());
@@ -61,14 +61,14 @@ public class HelloUDPServer implements HelloServer {
                 continue;
             }
 
-            String request = new String(packet.getData(), packet.getOffset(), packet.getLength(),
+            final String request = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                     StandardCharsets.UTF_8);
-            String response = "Hello, " + request;
+            final String response = "Hello, " + request;
             HelloUDPUtils.stringToPacket(packet, response, packet.getSocketAddress());
 
             try {
                 socket.send(packet);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 if (!socket.isClosed()) {
                     HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
                             "Error occurred in attempt to send response: " + new String(packet.getData()));
@@ -77,7 +77,7 @@ public class HelloUDPServer implements HelloServer {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         if (args == null || args.length != 2) {
             System.out.println("Usage: HelloUDPServer port threads_count");
             return;
@@ -89,8 +89,8 @@ public class HelloUDPServer implements HelloServer {
         }
 
         try (HelloUDPServer server = new HelloUDPServer()) {
-            int port = Integer.parseInt(args[0]);
-            int threads = Integer.parseInt(args[1]);
+            final int port = Integer.parseInt(args[0]);
+            final int threads = Integer.parseInt(args[1]);
 
             server.start(port, threads);
 
