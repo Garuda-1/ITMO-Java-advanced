@@ -51,6 +51,8 @@ public class HelloUDPServer implements HelloServer {
         final DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
 
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
+            HelloUDPUtils.emptyPacket(packet, bufferSizeRx);
+
             try {
                 socket.receive(packet);
             } catch (final IOException e) {

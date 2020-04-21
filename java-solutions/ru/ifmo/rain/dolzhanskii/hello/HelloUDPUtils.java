@@ -11,8 +11,12 @@ class HelloUDPUtils {
         packet.setSocketAddress(destination);
     }
 
-    static void emptyPacket(DatagramPacket packet, int bufferSizeRx, SocketAddress destination) {
+    static void emptyPacket(DatagramPacket packet, int bufferSizeRx) {
         packet.setData(new byte[bufferSizeRx], 0, bufferSizeRx);
+    }
+
+    static void emptyPacket(DatagramPacket packet, int bufferSizeRx, SocketAddress destination) {
+        emptyPacket(packet, bufferSizeRx);
         packet.setSocketAddress(destination);
     }
 
