@@ -5,35 +5,35 @@ import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 class HelloUDPUtils {
-    static void stringToPacket(DatagramPacket packet, String s, SocketAddress destination) {
-        byte[] payload = s.getBytes(StandardCharsets.UTF_8);
+    static void stringToPacket(final DatagramPacket packet, final String s, final SocketAddress destination) {
+        final byte[] payload = s.getBytes(StandardCharsets.UTF_8);
         packet.setData(payload, 0, payload.length);
         packet.setSocketAddress(destination);
     }
 
-    static void emptyPacket(DatagramPacket packet, int bufferSizeRx) {
+    static void emptyPacket(final DatagramPacket packet, final int bufferSizeRx) {
         packet.setData(new byte[bufferSizeRx], 0, bufferSizeRx);
     }
 
-    static void emptyPacket(DatagramPacket packet, int bufferSizeRx, SocketAddress destination) {
+    static void emptyPacket(final DatagramPacket packet, final int bufferSizeRx, final SocketAddress destination) {
         emptyPacket(packet, bufferSizeRx);
         packet.setSocketAddress(destination);
     }
 
-    static DatagramPacket createEmptyPacket(int bufferSizeRx) {
+    static DatagramPacket createEmptyPacket(final int bufferSizeRx) {
         return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx);
     }
 
-    private static int skipCharacters(int pos, String s, boolean skipDigits) {
+    private static int skip(int pos, final String s, final boolean skipCount) {
         for (; pos < s.length(); pos++) {
-            if (skipDigits ^ Character.isDigit(s.charAt(pos))) {
+            if (skipCount ^ Character.isDigit(s.charAt(pos))) {
                 break;
             }
         }
         return pos;
     }
 
-    private static boolean compareSubstring(String s, String t, int l, int r) {
+    private static boolean compareSubstring(final String s, final String t, final int l, final int r) {
         if (r - l != s.length()) {
             return false;
         }
@@ -45,16 +45,16 @@ class HelloUDPUtils {
         return true;
     }
 
-    static boolean validate(String s, int threadId, int requestId) {
-        String threadIdString = Integer.toString(threadId);
-        String requestIdString = Integer.toString(requestId);
+    static boolean validate(final String s, final int threadId, final int requestId) {
+        final String threadIdString = Integer.toString(threadId);
+        final String requestIdString = Integer.toString(requestId);
 
-        int l1 = skipCharacters(0, s, false);
-        int r1 = skipCharacters(l1, s, true);
-        int l2 = skipCharacters(r1, s, false);
-        int r2 = skipCharacters(l2, s, true);
+        final int p0 = skip(0, s, false);
+        final int p1 = skip(p0, s, true);
+        final int p2 = skip(p1, s, false);
+        final int p3 = skip(p2, s, true);
 
-        return compareSubstring(threadIdString, s, l1, r1) && compareSubstring(requestIdString, s, l2, r2);
+        return compareSubstring(threadIdString, s, p0, p1) && compareSubstring(requestIdString, s, p2, p3);
     }
 
     enum logType {
@@ -62,11 +62,11 @@ class HelloUDPUtils {
         ERROR
     }
 
-    static void log(logType type, String message) {
+    static void log(final logType type, final String message) {
         System.out.format("%s: \t%s%n", type, message);
     }
 
-    static void log(logType type, int threadId, String message) {
+    static void log(final logType type, final int threadId, final String message) {
         System.out.format("%s: \tThread %d \t%s%n", type, threadId, message);
     }
 }
