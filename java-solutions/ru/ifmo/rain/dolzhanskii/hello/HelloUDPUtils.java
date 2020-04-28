@@ -11,19 +11,6 @@ class HelloUDPUtils {
         packet.setSocketAddress(destination);
     }
 
-    static void emptyPacket(final DatagramPacket packet, final int bufferSizeRx) {
-        packet.setData(new byte[bufferSizeRx], 0, bufferSizeRx);
-    }
-
-    static void emptyPacket(final DatagramPacket packet, final int bufferSizeRx, final SocketAddress destination) {
-        emptyPacket(packet, bufferSizeRx);
-        packet.setSocketAddress(destination);
-    }
-
-    static DatagramPacket createEmptyPacket(final int bufferSizeRx) {
-        return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx);
-    }
-
     private static int skip(int pos, final String s, final boolean skipCount) {
         for (; pos < s.length(); pos++) {
             if (skipCount ^ Character.isDigit(s.charAt(pos))) {

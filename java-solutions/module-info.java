@@ -9,6 +9,7 @@ module ru.ifmo.rain.dolzhanskii.implementor {
     requires info.kgeorgiy.java.advanced.hello;
 
     requires java.compiler;
+    requires java.rmi;
 
     opens ru.ifmo.rain.dolzhanskii.implementor;
     exports ru.ifmo.rain.dolzhanskii.implementor;

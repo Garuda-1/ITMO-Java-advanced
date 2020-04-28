@@ -48,11 +48,11 @@ public class HelloUDPServer implements HelloServer {
     }
 
     private static void listen(final DatagramSocket socket, final int bufferSizeRx) {
-        final DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
+        final byte[] bufferRx = new byte[bufferSizeRx];
+        final DatagramPacket packet = new DatagramPacket(bufferRx, bufferSizeRx);
 
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
-            // :NOTE: Переиспользование
-            HelloUDPUtils.emptyPacket(packet, bufferSizeRx);
+            packet.setData(bufferRx, 0, bufferSizeRx);
 
             try {
                 socket.receive(packet);
@@ -91,17 +91,18 @@ public class HelloUDPServer implements HelloServer {
             return;
         }
 
-        try (final HelloUDPServer server = new HelloUDPServer()) {
+        try (HelloUDPServer server = new HelloUDPServer()) {
             final int port = Integer.parseInt(args[0]);
             final int threads = Integer.parseInt(args[1]);
 
             server.start(port, threads);
 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("Server has been started. Press any key to terminate");
-            new BufferedReader(new InputStreamReader(System.in)).readLine();
-        } catch (final NumberFormatException e) {
+            reader.readLine();
+        } catch (NumberFormatException e) {
             System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
-        } catch (final IOException e) {
+        } catch (IOException e) {
             System.err.println("IO error occurred: " + e.getMessage());
         }
     }

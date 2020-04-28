@@ -40,9 +40,11 @@ public class HelloUDPClient implements HelloClient {
     private void spamRequests(final SocketAddress hostSocket, final String prefix, final int threadId,
                               final int requests) {
         try (DatagramSocket socket = new DatagramSocket()) {
-            final int bufferSizeRx = socket.getReceiveBufferSize();
             socket.setSoTimeout(SOCKET_TIMEOUT);
-            DatagramPacket packet = HelloUDPUtils.createEmptyPacket(bufferSizeRx);
+
+            final int bufferSizeRx = socket.getReceiveBufferSize();
+            final byte[] bufferRx = new byte[bufferSizeRx];
+            final DatagramPacket packet = new DatagramPacket(bufferRx, bufferSizeRx);
 
             for (int requestId = 0; requestId < requests; requestId++) {
                 String request = prefix + threadId + '_' + requestId;
@@ -62,7 +64,8 @@ public class HelloUDPClient implements HelloClient {
                         continue;
                     }
                     try {
-                        HelloUDPUtils.emptyPacket(packet, bufferSizeRx, hostSocket);
+                        packet.setData(bufferRx, 0, bufferSizeRx);
+                        packet.setSocketAddress(hostSocket);
                         socket.receive(packet);
                         response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                                 StandardCharsets.UTF_8);
