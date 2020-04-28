@@ -46,15 +46,13 @@ class HelloUDPUtils {
     }
 
     static boolean validate(final String s, final int threadId, final int requestId) {
-        final String threadIdString = Integer.toString(threadId);
-        final String requestIdString = Integer.toString(requestId);
-
         final int p0 = skip(0, s, false);
         final int p1 = skip(p0, s, true);
         final int p2 = skip(p1, s, false);
         final int p3 = skip(p2, s, true);
 
-        return compareSubstring(threadIdString, s, p0, p1) && compareSubstring(requestIdString, s, p2, p3);
+        return compareSubstring(Integer.toString(threadId), s, p0, p1) &&
+                compareSubstring(Integer.toString(requestId), s, p2, p3);
     }
 
     enum logType {
