@@ -1,20 +1,11 @@
-package ru.ifmo.rain.dolzhanskii.bank;
+package ru.ifmo.rain.dolzhanskii.bank.source;
 
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
-public class Client {
+public class ClientAccountDemo {
     public static void main(final String... args) throws RemoteException {
-        final Bank bank;
-        try {
-            bank = (Bank) Naming.lookup("//localhost/bank");
-        } catch (final NotBoundException e) {
-            System.out.println("Bank is not bound");
-            return;
-        } catch (final MalformedURLException e) {
-            System.out.println("Bank URL is invalid");
+        final Bank bank = CommonUtils.retrieveRemoteBank();
+        if (bank == null) {
             return;
         }
 

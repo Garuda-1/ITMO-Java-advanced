@@ -1,4 +1,4 @@
-package ru.ifmo.rain.dolzhanskii.bank;
+package ru.ifmo.rain.dolzhanskii.bank.source;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -17,4 +17,10 @@ public interface Bank extends Remote {
      * @return account with specified identifier or {@code null} if such account does not exists.
      */
     Account getAccount(String id) throws RemoteException;
+
+    Person createPerson(String firstName, String lastName, String passport) throws RemoteException;
+
+    Person getLocalPerson(String passport) throws RemoteException;
+
+    Person getRemotePerson(String passport) throws RemoteException;
 }

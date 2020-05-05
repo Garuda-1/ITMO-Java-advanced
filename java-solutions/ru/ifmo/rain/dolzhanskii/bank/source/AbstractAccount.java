@@ -1,12 +1,17 @@
-package ru.ifmo.rain.dolzhanskii.bank;
+package ru.ifmo.rain.dolzhanskii.bank.source;
 
-public class RemoteAccount implements Account {
+public abstract class AbstractAccount implements Account {
     private final String id;
     private int amount;
 
-    public RemoteAccount(final String id) {
+    AbstractAccount(final String id) {
         this.id = id;
-        amount = 0;
+        this.amount = 0;
+    }
+
+    protected AbstractAccount(final String id, final int amount) {
+        this(id);
+        this.amount = amount;
     }
 
     public String getId() {

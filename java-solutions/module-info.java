@@ -1,4 +1,4 @@
-module ru.ifmo.rain.dolzhanskii.implementor {
+module ru.ifmo.rain.dolzhanskii {
     requires info.kgeorgiy.java.advanced.walk;
     requires info.kgeorgiy.java.advanced.arrayset;
     requires info.kgeorgiy.java.advanced.student;
@@ -10,6 +10,7 @@ module ru.ifmo.rain.dolzhanskii.implementor {
 
     requires java.compiler;
     requires java.rmi;
+    requires org.junit.jupiter.api;
 
     opens ru.ifmo.rain.dolzhanskii.implementor;
     exports ru.ifmo.rain.dolzhanskii.implementor;
