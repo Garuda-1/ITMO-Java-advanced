@@ -44,7 +44,6 @@ class AccountTests extends Assert {
     @DisplayName("Demo application")
     void testClientApp() throws RemoteException  {
         String[] empty = new String[0];
-        Server.main(empty);
         ClientAccountDemo.main(empty);
     }
 

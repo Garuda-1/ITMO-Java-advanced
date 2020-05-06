@@ -9,7 +9,7 @@ public abstract class AbstractAccount implements Account {
         this.amount = 0;
     }
 
-    protected AbstractAccount(final String id, final int amount) {
+    AbstractAccount(final String id, final int amount) {
         this(id);
         this.amount = amount;
     }

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalPerson extends AbstractPerson implements Serializable {
-    public LocalPerson(RemotePerson remotePerson) throws RemoteException {
+    LocalPerson(RemotePerson remotePerson) throws RemoteException {
         super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(), localizeAccounts(remotePerson));
     }
 
@@ -20,7 +20,7 @@ public class LocalPerson extends AbstractPerson implements Serializable {
     }
 
     @Override
-    public Account createLinkedAccount(String subId) {
+    public synchronized Account createLinkedAccount(String subId) {
         final String id = getAccountId(subId);
         final Account account = new RemoteAccount(id);
         System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +

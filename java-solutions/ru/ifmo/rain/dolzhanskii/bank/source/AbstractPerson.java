@@ -6,7 +6,7 @@ public abstract class AbstractPerson implements Person {
     private final String firstName, lastName, passport;
     final ConcurrentMap<String, Account> linkedAccounts;
 
-    public AbstractPerson(String firstName, String lastName, String passport,
+    AbstractPerson(String firstName, String lastName, String passport,
                    ConcurrentMap<String, Account> linkedAccounts) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -30,14 +30,14 @@ public abstract class AbstractPerson implements Person {
     }
 
     @Override
-    public Account getLinkedAccount(String subId) {
+    public synchronized Account getLinkedAccount(String subId) {
         String id = getAccountId(subId);
         System.out.println("Retrieving linked account for " + getLastName() + " " + getFirstName() +
                 " (id = " + id + ")");
         return linkedAccounts.get(id);
     }
 
-    protected String getAccountId(String subId) {
+    String getAccountId(String subId) {
         return passport + ':' + subId;
     }
 }

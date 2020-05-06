@@ -1,9 +1,8 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
-import java.io.Serializable;
 import java.rmi.*;
 
-public interface Account extends Remote, Serializable {
+public interface Account extends Remote {
     /** Returns account identifier. */
     String getId() throws RemoteException;
 

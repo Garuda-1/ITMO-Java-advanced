@@ -7,7 +7,7 @@ import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RemotePerson extends AbstractPerson {
-    public RemotePerson(String firstName, String lastName, String passport) {
+    RemotePerson(String firstName, String lastName, String passport) {
         super(firstName, lastName, passport, new ConcurrentHashMap<>());
     }
 
