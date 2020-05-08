@@ -260,5 +260,9 @@ class PersonTests extends Assert {
         assertEquals(3 * TEST_AMOUNT_DELTA, localAccount2.getAmount());
     }
 
+    @Test
+    @DisplayName("Multi thread requests single person")
+    void testMultiThreadRequestsSingle() {
 
+    }
 }

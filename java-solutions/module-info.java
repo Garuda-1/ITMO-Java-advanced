@@ -14,4 +14,12 @@ module ru.ifmo.rain.dolzhanskii {
 
     opens ru.ifmo.rain.dolzhanskii.implementor;
     exports ru.ifmo.rain.dolzhanskii.implementor;
+
+    exports ru.ifmo.rain.dolzhanskii.bank.demos;
+    exports ru.ifmo.rain.dolzhanskii.bank.source;
+    opens ru.ifmo.rain.dolzhanskii.bank.demos to java.rmi;
+    opens ru.ifmo.rain.dolzhanskii.bank.source to java.rmi;
+
+    exports ru.ifmo.rain.dolzhanskii.bank.test;
+    opens ru.ifmo.rain.dolzhanskii.bank.test to org.junit.jupiter.api;
 }
