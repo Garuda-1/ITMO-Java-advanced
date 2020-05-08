@@ -10,7 +10,7 @@ module ru.ifmo.rain.dolzhanskii {
 
     requires java.compiler;
     requires java.rmi;
-    requires org.junit.jupiter.api;
+//    requires org.junit.jupiter.api;
 
     opens ru.ifmo.rain.dolzhanskii.implementor;
     exports ru.ifmo.rain.dolzhanskii.implementor;
