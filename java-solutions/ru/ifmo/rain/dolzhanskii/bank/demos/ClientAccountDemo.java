@@ -1,4 +1,7 @@
-package ru.ifmo.rain.dolzhanskii.bank.source;
+package ru.ifmo.rain.dolzhanskii.bank.demos;
+
+import ru.ifmo.rain.dolzhanskii.bank.source.Account;
+import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 
 import java.rmi.RemoteException;
 

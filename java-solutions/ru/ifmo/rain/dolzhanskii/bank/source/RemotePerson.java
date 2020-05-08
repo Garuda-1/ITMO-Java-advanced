@@ -7,13 +7,10 @@ import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RemotePerson extends AbstractPerson {
-    RemotePerson(String firstName, String lastName, String passport) {
-        super(firstName, lastName, passport, new ConcurrentHashMap<>());
-    }
+    private final Bank bank;
 
-    @Override
-    public Account createLinkedAccount(String subId) throws RemoteException {
-        final Bank bank;
+    RemotePerson(final String firstName, final String lastName, final String passport) throws RemoteException {
+        super(firstName, lastName, passport, new ConcurrentHashMap<>());
         try {
             bank = (Bank) Naming.lookup("//localhost:8888/bank");
         } catch (final NotBoundException e) {
@@ -21,7 +18,10 @@ public class RemotePerson extends AbstractPerson {
         } catch (final MalformedURLException e) {
             throw new RemoteException("Malformed URL", e);
         }
+    }
 
+    @Override
+    public Account createLinkedAccount(final String subId) throws RemoteException {
         final String id = getAccountId(subId);
         final Account account = bank.createAccount(id);
         System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +

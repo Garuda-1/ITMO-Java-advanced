@@ -1,4 +1,7 @@
-package ru.ifmo.rain.dolzhanskii.bank.source;
+package ru.ifmo.rain.dolzhanskii.bank.demos;
+
+import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
+import ru.ifmo.rain.dolzhanskii.bank.source.RemoteBank;
 
 import java.rmi.*;
 import java.rmi.server.*;

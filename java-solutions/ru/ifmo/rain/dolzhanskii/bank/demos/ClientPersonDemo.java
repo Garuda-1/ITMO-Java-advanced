@@ -1,4 +1,8 @@
-package ru.ifmo.rain.dolzhanskii.bank.source;
+package ru.ifmo.rain.dolzhanskii.bank.demos;
+
+import ru.ifmo.rain.dolzhanskii.bank.source.Account;
+import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
+import ru.ifmo.rain.dolzhanskii.bank.source.Person;
 
 import java.rmi.RemoteException;
 

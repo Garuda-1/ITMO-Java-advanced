@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
 import java.net.MalformedURLException;
@@ -219,11 +220,10 @@ class PersonTests extends Assert {
     }
 
     @Test
-    @DisplayName("Async")
-    void testAsync() throws RemoteException  {
-        Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, TEST_PASSPORT);
-        assertNotNull(person);
-        person.createLinkedAccount(TEST_SUB_ID);
+    @DisplayName("Two local and remote persons independence")
+    void testLocalAndRemotePersonsIndependence() throws RemoteException  {
+        Person person = safeCreatePerson();
+        safeAddALinkedAccount(person);
 
         Person remotePerson = bank.getRemotePerson(TEST_PASSPORT);
         assertNotNull(remotePerson);
@@ -241,22 +241,24 @@ class PersonTests extends Assert {
         Account localAccount2 = localPerson2.getLinkedAccount(TEST_SUB_ID);
         assertNotNull(localAccount2);
 
-        remoteAccount.setAmount(100);
+        remoteAccount.setAmount(TEST_AMOUNT_DELTA);
 
-        assertEquals(100, remoteAccount.getAmount());
+        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
         assertEquals(0, localAccount1.getAmount());
         assertEquals(0, localAccount2.getAmount());
 
-        localAccount1.setAmount(200);
+        localAccount1.setAmount(2 * TEST_AMOUNT_DELTA);
 
-        assertEquals(100, remoteAccount.getAmount());
-        assertEquals(200, localAccount1.getAmount());
+        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
+        assertEquals(2 * TEST_AMOUNT_DELTA, localAccount1.getAmount());
         assertEquals(0, localAccount2.getAmount());
 
-        localAccount2.setAmount(300);
+        localAccount2.setAmount(3 * TEST_AMOUNT_DELTA);
 
-        assertEquals(100, remoteAccount.getAmount());
-        assertEquals(200, localAccount1.getAmount());
-        assertEquals(300, localAccount2.getAmount());
+        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
+        assertEquals(2 * TEST_AMOUNT_DELTA, localAccount1.getAmount());
+        assertEquals(3 * TEST_AMOUNT_DELTA, localAccount2.getAmount());
     }
+
+
 }

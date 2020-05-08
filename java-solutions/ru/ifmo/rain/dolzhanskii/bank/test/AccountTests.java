@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
 import java.net.MalformedURLException;
