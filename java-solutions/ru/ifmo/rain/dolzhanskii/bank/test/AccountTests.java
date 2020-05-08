@@ -1,17 +1,16 @@
 package ru.ifmo.rain.dolzhanskii.bank.test;
 
 import org.junit.Assert;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
 import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,11 @@ class AccountTests extends Assert {
 
     @BeforeAll
     static void beforeAll() throws RemoteException {
-        LocateRegistry.createRegistry(PORT);
+        try {
+            LocateRegistry.createRegistry(PORT);
+        } catch (final ExportException e) {
+            // Ignored
+        }
     }
 
     @BeforeEach
@@ -39,6 +42,11 @@ class AccountTests extends Assert {
         bank = new RemoteBank(PORT);
         UnicastRemoteObject.exportObject(bank, PORT);
         Naming.rebind("//localhost:8888/bank", bank);
+    }
+
+    @AfterEach
+    void afterEach() throws NoSuchObjectException {
+        UnicastRemoteObject.unexportObject(bank, false);
     }
 
     @Test
@@ -129,6 +137,7 @@ class AccountTests extends Assert {
         final int threadsCount = 500;
 
         final Account accountBasic = bank.createAccount(TEST_ACCOUNT_ID);
+        assertNotNull(accountBasic);
 
         final ExecutorService pool = Executors.newFixedThreadPool(threadsCount);
         final Lock lock = new ReentrantLock();
@@ -175,7 +184,7 @@ class AccountTests extends Assert {
                 final Account account = bank.getAccount(ids.get(i));
                 assertNotNull(account);
                 account.setAmount(i + 1);
-            } catch (RemoteException e) {
+            } catch (final RemoteException e) {
                 // Ignored
             }
         });
@@ -185,7 +194,7 @@ class AccountTests extends Assert {
                 final Account account = bank.getAccount(ids.get(i));
                 assertNotNull(account);
                 assertEquals(i + 1, account.getAmount());
-            } catch (RemoteException e) {
+            } catch (final RemoteException e) {
                 // Ignored
             }
         });
@@ -210,7 +219,7 @@ class AccountTests extends Assert {
                 lock.lock();
                 account.setAmount(account.getAmount() + deltas.get(j));
                 lock.unlock();
-            } catch (RemoteException e) {
+            } catch (final RemoteException e) {
                 // Ignored
             }
         })));
@@ -221,7 +230,7 @@ class AccountTests extends Assert {
                 final Account account = bank.getAccount(ids.get(i));
                 assertNotNull(account);
                 assertEquals(deltas.get(i) * requestsPerAccount, account.getAmount());
-            } catch (RemoteException e) {
+            } catch (final RemoteException e) {
                 // Ignored
             }
         });

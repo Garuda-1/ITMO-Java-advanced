@@ -1,18 +1,26 @@
 package ru.ifmo.rain.dolzhanskii.bank.test;
 
 import org.junit.Assert;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
 import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @DisplayName("Person tests")
 class PersonTests extends Assert {
@@ -80,9 +88,57 @@ class PersonTests extends Assert {
         assertEquals(3 * TEST_AMOUNT_DELTA, account2.getAmount());
     }
 
+    private List<String> generateTestIds(final int count) {
+        return IntStream.range(0, count).mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private void safeCreateMultiplePersonsWithSingleAccount(final List<String> personIds) {
+        personIds.forEach(passport -> {
+            try {
+                Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
+                assertNotNull(person);
+                safeAddALinkedAccount(person);
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
+    private void safeCreateMultiplePersonsWithMultipleAccounts(final List<String> personIds, final List<String> accountIds) {
+        personIds.forEach(passport -> {
+            try {
+                final Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
+                assertNotNull(person);
+                accountIds.forEach(subId -> {
+                    try {
+                        assertNotNull(person.createLinkedAccount(subId));
+                    } catch (final RemoteException e) {
+                        // Ignored
+                    }
+                });
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
+    private void safeAddMultipleLinkedAccounts(final List<String> accountIds, final Person person) {
+        accountIds.forEach(subId -> {
+            try {
+                assertNotNull(person.createLinkedAccount(subId));
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
     @BeforeAll
     static void beforeAll() throws RemoteException {
-        LocateRegistry.createRegistry(PORT);
+        try {
+            LocateRegistry.createRegistry(PORT);
+        } catch (final ExportException e) {
+            // Ignored
+        }
     }
 
     @BeforeEach
@@ -90,6 +146,11 @@ class PersonTests extends Assert {
         bank = new RemoteBank(PORT);
         UnicastRemoteObject.exportObject(bank, PORT);
         Naming.rebind("//localhost:8888/bank", bank);
+    }
+
+    @AfterEach
+    void afterEach() throws NoSuchObjectException {
+        UnicastRemoteObject.unexportObject(bank, false);
     }
 
     @Test
@@ -261,8 +322,198 @@ class PersonTests extends Assert {
     }
 
     @Test
-    @DisplayName("Multi thread requests single person")
-    void testMultiThreadRequestsSingle() {
+    @DisplayName("Multiple linked accounts")
+    void testMultipleLinkedAccounts() throws RemoteException {
+        final int countOfAccounts = 100;
+        final Person person = safeCreatePerson();
+        final List<String> accountIds = generateTestIds(countOfAccounts);
+        safeAddMultipleLinkedAccounts(accountIds, person);
 
+        IntStream.range(0, countOfAccounts).forEach(i -> {
+            try {
+                final Account account = person.getLinkedAccount(accountIds.get(i));
+                assertNotNull(account);
+                account.setAmount(i + 1);
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+
+        IntStream.range(0, countOfAccounts).forEach(i -> {
+            try {
+                final Account account = person.getLinkedAccount(accountIds.get(i));
+                assertNotNull(account);
+                assertEquals(i + 1, account.getAmount());
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Multi thread requests single person single account")
+    void testMultiThreadRequestsSinglePersonSingleAccount() throws RemoteException, InterruptedException {
+        final int threadsCount = 500;
+
+        final Person personBasic = safeCreatePerson();
+        final Account accountBasic = safeAddALinkedAccount(personBasic);
+
+        final ExecutorService pool = Executors.newFixedThreadPool(threadsCount);
+        final Lock lock = new ReentrantLock();
+        IntStream.range(0, threadsCount).forEach(i -> pool.submit(() -> {
+            try {
+                final Person person = bank.getRemotePerson(TEST_PASSPORT);
+                assertNotNull(person);
+
+                final Account account = person.getLinkedAccount(TEST_SUB_ID);
+                assertNotNull(account);
+
+                lock.lock();
+                account.setAmount(account.getAmount() + TEST_AMOUNT_DELTA);
+                lock.unlock();
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        }));
+        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
+
+        assertEquals(TEST_AMOUNT_DELTA * threadsCount, accountBasic.getAmount());
+    }
+
+    @Test
+    @DisplayName("Multi thread requests single person multiple accounts")
+    void testMultiThreadRequestsSinglePersonMultipleAccounts() throws RemoteException, InterruptedException {
+        final int requestsPerAccount = 50;
+        final int countOfAccounts = 10;
+
+        final Person personBasic = safeCreatePerson();
+        final List<String> accountIds = generateTestIds(countOfAccounts);
+        safeAddMultipleLinkedAccounts(accountIds, personBasic);
+
+        final List<Integer> deltas = IntStream.range(1, countOfAccounts + 1).boxed()
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerAccount);
+        final Lock lock = new ReentrantLock();
+        IntStream.range(0, requestsPerAccount).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
+            try {
+                final Person person = bank.getRemotePerson(TEST_PASSPORT);
+                assertNotNull(person);
+                final Account account = person.getLinkedAccount(accountIds.get(j));
+                assertNotNull(account);
+
+                lock.lock();
+                account.setAmount(account.getAmount() + deltas.get(j));
+                lock.unlock();
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        })));
+        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
+
+        IntStream.range(0, countOfAccounts).forEach(i -> {
+            try {
+                final Account account = personBasic.getLinkedAccount(accountIds.get(i));
+                assertNotNull(account);
+                assertEquals(deltas.get(i) * requestsPerAccount, account.getAmount());
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Multi thread requests multiple persons single account")
+    void testMultiThreadRequestsMultiplePersonsSingleAccount() throws RemoteException, InterruptedException {
+        final int requestsPerPerson = 50;
+        final int countOfPersons = 10;
+
+        final List<String> personIds = generateTestIds(countOfPersons);
+        safeCreateMultiplePersonsWithSingleAccount(personIds);
+        final List<Integer> deltas = IntStream.range(1, countOfPersons + 1).boxed()
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerPerson);
+        final Lock lock = new ReentrantLock();
+        IntStream.range(0, requestsPerPerson).forEach(i -> IntStream.range(0, countOfPersons).forEach(j -> pool.submit(() -> {
+            try {
+                final Person person = bank.getRemotePerson(personIds.get(j));
+                assertNotNull(person);
+                final Account account = person.getLinkedAccount(TEST_SUB_ID);
+                assertNotNull(account);
+
+                lock.lock();
+                account.setAmount(account.getAmount() + deltas.get(j));
+                lock.unlock();
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        })));
+        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
+
+        IntStream.range(0, countOfPersons).forEach(i -> {
+            try {
+                final Person person = bank.getRemotePerson(personIds.get(i));
+                assertNotNull(person);
+
+                final Account account = person.getLinkedAccount(TEST_SUB_ID);
+                assertNotNull(account);
+
+                assertEquals(deltas.get(i) * requestsPerPerson, account.getAmount());
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
+    @Test
+    @DisplayName("Multi thread requests multiple persons multiple accounts")
+    void testMultiThreadRequestsMultiplePersonsMultipleAccounts() throws InterruptedException {
+        final int requestsPerPerson = 50;
+        final int countOfPersons = 10;
+        final int countOfAccounts = 10;
+
+        final List<String> personIds = generateTestIds(countOfPersons);
+        final List<String> accountIds = generateTestIds(countOfAccounts);
+        safeCreateMultiplePersonsWithMultipleAccounts(personIds, accountIds);
+        final List<Integer> deltas = IntStream.range(1, countOfPersons + 1).boxed()
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerPerson);
+        final Lock lock = new ReentrantLock();
+        IntStream.range(0, requestsPerPerson).forEach(i ->
+                personIds.forEach(passport ->
+                        IntStream.range(0, countOfAccounts).forEach(j -> {
+                            try {
+                                final Person person = bank.getRemotePerson(passport);
+                                assertNotNull(person);
+
+                                final Account account = person.getLinkedAccount(accountIds.get(j));
+                                assertNotNull(account);
+
+                                lock.lock();
+                                account.setAmount(account.getAmount() + deltas.get(j));
+                                lock.unlock();
+                            } catch (final RemoteException e) {
+                                // Ignored
+                            }
+                        })));
+        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
+
+        personIds.forEach(passport -> {
+            IntStream.range(0, countOfAccounts).forEach(i -> {
+                try {
+                    final Person person = bank.getRemotePerson(passport);
+                    assertNotNull(person);
+
+                    final Account account = person.getLinkedAccount(accountIds.get(i));
+                    assertNotNull(account);
+
+                    assertEquals(deltas.get(i) * requestsPerPerson, account.getAmount());
+                } catch (final RemoteException e) {
+                    // Ignored
+                }
+            });
+        });
     }
 }
