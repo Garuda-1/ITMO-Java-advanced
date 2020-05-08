@@ -2,5 +2,4 @@ _build/
 _javadoc/
 _implementor.jar
 _scripts/
-lib/
 *.iml
