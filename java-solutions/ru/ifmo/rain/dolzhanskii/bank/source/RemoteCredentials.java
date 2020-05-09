@@ -8,4 +8,8 @@ public class RemoteCredentials {
     public static String getBankUrl() {
         return String.format("//%s:%s/%s", BANK_HOST, BANK_PORT, BANK_PATH);
     }
+
+    public static int getBankPort() {
+        return Integer.parseInt(BANK_PORT);
+    }
 }

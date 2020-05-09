@@ -2,24 +2,26 @@ package ru.ifmo.rain.dolzhanskii.bank.demos;
 
 import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.source.RemoteBank;
+import ru.ifmo.rain.dolzhanskii.bank.source.RemoteCredentials;
 
 import java.rmi.*;
 import java.rmi.server.*;
 import java.net.*;
 
 public class Server {
-    private final static int PORT = 8888;
     public static void main(final String... args) {
-        final Bank bank = new RemoteBank(PORT);
+        final Bank bank = new RemoteBank(RemoteCredentials.getBankPort());
+
         try {
-            UnicastRemoteObject.exportObject(bank, PORT);
-            Naming.rebind("//localhost:8888/bank", bank);
+            UnicastRemoteObject.exportObject(bank, RemoteCredentials.getBankPort());
+            Naming.rebind(RemoteCredentials.getBankUrl(), bank);
         } catch (final RemoteException e) {
             System.out.println("Cannot export object: " + e.getMessage());
-        e.printStackTrace();
+            e.printStackTrace();
         } catch (final MalformedURLException e) {
             System.out.println("Malformed URL");
         }
+
         System.out.println("Server started");
     }
 }
