@@ -19,7 +19,7 @@ class PersonTests extends CommonTests {
     @DisplayName("Create linked account")
     void testCreateLinkedAccount() throws RemoteException {
         final Person person = safeCreatePerson();
-        final Account account = safeAddALinkedAccount(person);
+        final Account account = safeAddLinkedAccount(person);
         assertEquals(0, account.getAmount());
         assertEquals(person.getPassport() + ":" + TEST_SUB_ID, account.getId());
     }
@@ -42,7 +42,7 @@ class PersonTests extends CommonTests {
     @DisplayName("Not existing linked account")
     void testNonExistingLinkedAccount() throws RemoteException {
         final Person person = safeCreatePerson();
-        safeAddALinkedAccount(person);
+        safeAddLinkedAccount(person);
     }
 
     @Test
@@ -53,10 +53,10 @@ class PersonTests extends CommonTests {
         final Person person1 = safeCreatePerson();
         final Person person2 = safeCreatePerson();
 
-        final Account account1 = safeAddALinkedAccount(person1);
+        final Account account1 = safeAddLinkedAccount(person1);
         account1.setAmount(amount);
 
-        final Account account2 = safeAddALinkedAccount(person2);
+        final Account account2 = safeAddLinkedAccount(person2);
         assertEquals(amount, account1.getAmount());
         assertEquals(amount, account2.getAmount());
         assertEquals(person1.getPassport() + ":" + TEST_SUB_ID, account1.getId());
@@ -86,6 +86,20 @@ class PersonTests extends CommonTests {
         final Person person2 = bank.createPerson("Tyler", "Wellick", TEST_PASSPORT);
         assertNotNull(person2);
         validateDefaultPerson(person2);
+    }
+
+    @Test
+    @DisplayName("Account bonding")
+    void testAccountBonding() throws RemoteException {
+        final int amount = 100;
+
+        final Account account1 = safeCreateAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
+        account1.setAmount(amount);
+        final Person person = safeCreatePerson();
+        assertNull(person.getLinkedAccount(TEST_SUB_ID));
+
+        final Account account2 = safeAddLinkedAccount(person);
+        assertEquals(amount, account2.getAmount());
     }
 
     @Test
@@ -132,7 +146,7 @@ class PersonTests extends CommonTests {
     @DisplayName("Two local and remote persons independence")
     void testLocalAndRemotePersonsIndependence() throws RemoteException  {
         Person person = safeCreatePerson();
-        safeAddALinkedAccount(person);
+        safeAddLinkedAccount(person);
 
         Person remotePerson = bank.getRemotePerson(TEST_PASSPORT);
         assertNotNull(remotePerson);
@@ -172,30 +186,30 @@ class PersonTests extends CommonTests {
     @Test
     @DisplayName("Multiple linked accounts")
     void testMultipleLinkedAccounts() throws InterruptedException {
-        multiThreadQueries(1, 1, 1, 50);
+        multiThreadPersonQueries(1, 1, 1, 50);
     }
 
     @Test
     @DisplayName("Multi thread requests single person single account")
     void testMultiThreadRequestsSinglePersonSingleAccount() throws InterruptedException {
-        multiThreadQueries(10, 10, 1, 1);
+        multiThreadPersonQueries(10, 10, 1, 1);
     }
 
     @Test
     @DisplayName("Multi thread requests single person multiple accounts")
     void testMultiThreadRequestsSinglePersonMultipleAccounts() throws InterruptedException {
-        multiThreadQueries(10, 10, 1, 10);
+        multiThreadPersonQueries(10, 10, 1, 10);
     }
 
     @Test
     @DisplayName("Multi thread requests multiple persons single account")
     void testMultiThreadRequestsMultiplePersonsSingleAccount() throws InterruptedException {
-        multiThreadQueries(10, 10, 10, 1);
+        multiThreadPersonQueries(10, 10, 10, 1);
     }
 
     @Test
     @DisplayName("Multi thread requests multiple persons multiple accounts")
     void testMultiThreadRequestsMultiplePersonsMultipleAccounts() throws InterruptedException {
-        multiThreadQueries(5, 10, 5, 5);
+        multiThreadPersonQueries(5, 10, 5, 5);
     }
 }

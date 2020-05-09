@@ -7,10 +7,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalPerson extends AbstractPerson implements Serializable {
     LocalPerson(RemotePerson remotePerson) throws RemoteException {
-        super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(), localizeAccounts(remotePerson));
+        super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(),
+                exportAccounts(remotePerson));
     }
 
-    private static ConcurrentHashMap<String, Account> localizeAccounts(RemotePerson remotePerson) throws RemoteException {
+    private static ConcurrentHashMap<String, Account> exportAccounts(RemotePerson remotePerson) throws RemoteException {
         ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>();
         for (Map.Entry<String, Account> entry : remotePerson.linkedAccounts.entrySet()) {
             Account account = entry.getValue();

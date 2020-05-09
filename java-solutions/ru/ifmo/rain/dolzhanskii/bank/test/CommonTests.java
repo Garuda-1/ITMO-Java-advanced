@@ -4,10 +4,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import ru.ifmo.rain.dolzhanskii.bank.source.Account;
-import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
-import ru.ifmo.rain.dolzhanskii.bank.source.Person;
-import ru.ifmo.rain.dolzhanskii.bank.source.RemoteBank;
+import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -50,12 +47,71 @@ class CommonTests extends Assert {
     void beforeEach() throws RemoteException, MalformedURLException {
         bank = new RemoteBank(PORT);
         UnicastRemoteObject.exportObject(bank, PORT);
-        Naming.rebind("//localhost:8888/bank", bank);
+        Naming.rebind(RemoteCredentials.getBankUrl(), bank);
     }
 
     @AfterEach
     void afterEach() throws NoSuchObjectException {
         UnicastRemoteObject.unexportObject(bank, false);
+    }
+
+    private static List<String> generateTestIds(final int count) {
+        return IntStream.range(0, count).mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    static Account safeCreateAccount(final String id) throws RemoteException {
+        final Account account = bank.createAccount(id);
+        assertNotNull(account);
+        return account;
+    }
+
+    static Account safeGetAccount(final String id) throws RemoteException {
+        final Account account = bank.getAccount(id);
+        assertNotNull(account);
+        return account;
+    }
+
+    private static void safeCreateMultipleAccounts(final List<String> ids) {
+        ids.forEach(id -> {
+            try {
+                bank.createAccount(id);
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
+    }
+
+    static void multiThreadAccountQueries(final int countOfThreads, final int requestsPerItem,
+                                          final int countOfAccounts) throws InterruptedException {
+        final List<Integer> deltas = IntStream.range(0, countOfAccounts).boxed()
+                .collect(Collectors.toCollection(ArrayList::new));
+        final List<String> ids = generateTestIds(countOfAccounts);
+        safeCreateMultipleAccounts(ids);
+
+        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
+        final Lock lock = new ReentrantLock();
+
+        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
+                .forEach(i -> pool.submit(() -> {
+                    try {
+                        final Account account = safeGetAccount(ids.get(i));
+                        lock.lock();
+                        account.setAmount(account.getAmount() + deltas.get(i));
+                        lock.unlock();
+                    } catch (final RemoteException e) {
+                        // Ignored
+                    }
+                })));
+        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
+
+        IntStream.range(0, countOfAccounts).forEach(i -> {
+            try {
+                final Account account = safeGetAccount(ids.get(i));
+                assertEquals(deltas.get(i) * requestsPerItem, account.getAmount());
+            } catch (final RemoteException e) {
+                // Ignored
+            }
+        });
     }
 
     static Person safeCreatePerson() throws RemoteException {
@@ -64,7 +120,7 @@ class CommonTests extends Assert {
         return person;
     }
 
-    static Account safeAddALinkedAccount(final Person person) throws RemoteException {
+    static Account safeAddLinkedAccount(final Person person) throws RemoteException {
         final Account account = person.createLinkedAccount(TEST_SUB_ID);
         assertNotNull(account);
         return account;
@@ -72,7 +128,7 @@ class CommonTests extends Assert {
 
     static Account safeCreatePersonWithLinkedAccount() throws RemoteException {
         final Person person = safeCreatePerson();
-        final Account account = safeAddALinkedAccount(person);
+        final Account account = safeAddLinkedAccount(person);
         account.setAmount(account.getAmount() + TEST_AMOUNT_DELTA);
         return account;
     }
@@ -113,10 +169,6 @@ class CommonTests extends Assert {
         assertEquals(3 * TEST_AMOUNT_DELTA, account2.getAmount());
     }
 
-    private static List<String> generateTestIds(final int count) {
-        return IntStream.range(0, count).mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
-    }
-
     private static void safeCreateMultiplePersonsWithMultipleAccounts(final List<String> passports, final List<String> subIds) {
         passports.forEach(passport -> {
             try {
@@ -143,8 +195,8 @@ class CommonTests extends Assert {
         return account;
     }
 
-    static void multiThreadQueries(final int countOfThreads, final int requestsPerItem, final int countOfPersons,
-                                   final int countOfAccounts) throws InterruptedException {
+    static void multiThreadPersonQueries(final int countOfThreads, final int requestsPerItem, final int countOfPersons,
+                                         final int countOfAccounts) throws InterruptedException {
         final List<List<Integer>> deltas = IntStream.range(0, countOfPersons).boxed()
                 .map(i -> IntStream.range(i * countOfAccounts + 1, (i + 1) * countOfAccounts + 1).boxed()
                         .collect(Collectors.toCollection(ArrayList::new)))

@@ -4,15 +4,6 @@ import org.junit.jupiter.api.*;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @DisplayName("Account tests")
 class AccountTests extends CommonTests {
@@ -20,8 +11,7 @@ class AccountTests extends CommonTests {
     @Test
     @DisplayName("Crete account")
     void testCreateAccount() throws RemoteException {
-        final Account account = bank.createAccount(TEST_ACCOUNT_ID);
-        assertNotNull(account);
+        final Account account = safeCreateAccount(TEST_ACCOUNT_ID);
         assertEquals(TEST_ACCOUNT_ID, account.getId());
         assertEquals(0, account.getAmount());
     }
@@ -38,13 +28,9 @@ class AccountTests extends CommonTests {
     void testAlreadyExistingAccount() throws RemoteException {
         final int amount = 100;
 
-        final Account account1 = bank.createAccount(TEST_ACCOUNT_ID);
-        assertNotNull(account1);
-
+        final Account account1 = safeCreateAccount(TEST_ACCOUNT_ID);
         account1.setAmount(amount);
-        final Account account2 = bank.createAccount(TEST_ACCOUNT_ID);
-        assertNotNull(account2);
-
+        final Account account2 = safeCreateAccount(TEST_ACCOUNT_ID);
         assertEquals(amount, account2.getAmount());
     }
 
@@ -52,9 +38,7 @@ class AccountTests extends CommonTests {
     @DisplayName("Create and get account")
     void testCreateAndGetAccount() throws RemoteException {
         bank.createAccount(TEST_ACCOUNT_ID);
-        final Account account = bank.getAccount(TEST_ACCOUNT_ID);
-
-        assertNotNull(account);
+        final Account account = safeGetAccount(TEST_ACCOUNT_ID);
         assertEquals(TEST_ACCOUNT_ID, account.getId());
         assertEquals(0, account.getAmount());
     }
@@ -64,9 +48,7 @@ class AccountTests extends CommonTests {
     void testSetAmount() throws RemoteException {
         final int amount = 100;
 
-        final Account account = bank.createAccount(TEST_ACCOUNT_ID);
-        assertNotNull(account);
-
+        final Account account = safeCreateAccount(TEST_ACCOUNT_ID);
         account.setAmount(amount);
         assertEquals(amount, account.getAmount());
     }
@@ -77,10 +59,8 @@ class AccountTests extends CommonTests {
         final int amount1 = 100;
         final int amount2 = 200;
 
-        final Account account1 = bank.createAccount(TEST_ACCOUNT_ID);
-        assertNotNull(account1);
-        final Account account2 = bank.getAccount(TEST_ACCOUNT_ID);
-        assertNotNull(account2);
+        final Account account1 = safeCreateAccount(TEST_ACCOUNT_ID);
+        final Account account2 = safeCreateAccount(TEST_ACCOUNT_ID);
 
         account1.setAmount(amount1);
         assertEquals(amount1, account1.getAmount());
@@ -92,108 +72,20 @@ class AccountTests extends CommonTests {
     }
 
     @Test
-    @DisplayName("Multi thread requests single account")
-    void testMultiThreadRequestsSingle() throws RemoteException, InterruptedException {
-        final int delta = 100;
-        final int threadsCount = 500;
-
-        final Account accountBasic = bank.createAccount(TEST_ACCOUNT_ID);
-        assertNotNull(accountBasic);
-
-        final ExecutorService pool = Executors.newFixedThreadPool(threadsCount);
-        final Lock lock = new ReentrantLock();
-        IntStream.range(0, threadsCount).forEach(i -> pool.submit(() -> {
-            try {
-                final Account account = bank.getAccount(TEST_ACCOUNT_ID);
-                assertNotNull(account);
-
-                lock.lock();
-                account.setAmount(account.getAmount() + delta);
-                lock.unlock();
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        }));
-        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-        assertEquals(delta * threadsCount, accountBasic.getAmount());
-    }
-
-    private List<String> createMultipleAccounts(final int countOfAccounts) {
-        final List<String> ids = IntStream.range(0, countOfAccounts)
-                .mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
-
-        ids.forEach(id -> {
-            try {
-                bank.createAccount(id);
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
-
-        return ids;
+    @DisplayName("Multiple accounts simple")
+    void testMultipleAccounts() throws InterruptedException {
+        multiThreadAccountQueries(1, 10, 10);
     }
 
     @Test
-    @DisplayName("Multiple accounts simple")
-    void testMultipleAccounts() {
-        final int countOfAccounts = 100;
-        final List<String> ids = createMultipleAccounts(countOfAccounts);
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = bank.getAccount(ids.get(i));
-                assertNotNull(account);
-                account.setAmount(i + 1);
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = bank.getAccount(ids.get(i));
-                assertNotNull(account);
-                assertEquals(i + 1, account.getAmount());
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
+    @DisplayName("Multi thread requests single account")
+    void testMultiThreadRequestsSingle() throws InterruptedException {
+        multiThreadAccountQueries(10, 10, 1);
     }
 
     @Test
     @DisplayName("Multiple accounts multi threaded")
     void testMultipleAccountMultiThread() throws InterruptedException {
-        final int countOfAccounts = 50;
-        final List<String> ids = createMultipleAccounts(countOfAccounts);
-        final List<Integer> deltas = IntStream.range(1, countOfAccounts + 1).boxed()
-                .collect(Collectors.toCollection(ArrayList::new));
-        final int requestsPerAccount = 50;
-
-        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerAccount);
-        final Lock lock = new ReentrantLock();
-        IntStream.range(0, requestsPerAccount).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
-            try {
-                final Account account = bank.getAccount(ids.get(j));
-                assertNotNull(account);
-
-                lock.lock();
-                account.setAmount(account.getAmount() + deltas.get(j));
-                lock.unlock();
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        })));
-        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = bank.getAccount(ids.get(i));
-                assertNotNull(account);
-                assertEquals(deltas.get(i) * requestsPerAccount, account.getAmount());
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
+        multiThreadAccountQueries(10, 10, 10);
     }
 }

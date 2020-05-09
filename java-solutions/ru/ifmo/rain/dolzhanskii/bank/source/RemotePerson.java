@@ -12,7 +12,7 @@ public class RemotePerson extends AbstractPerson {
     RemotePerson(final String firstName, final String lastName, final String passport) throws RemoteException {
         super(firstName, lastName, passport, new ConcurrentHashMap<>());
         try {
-            bank = (Bank) Naming.lookup("//localhost:8888/bank");
+            bank = (Bank) Naming.lookup(RemoteCredentials.getBankUrl());
         } catch (final NotBoundException e) {
             throw new RemoteException("Bank not found", e);
         } catch (final MalformedURLException e) {
