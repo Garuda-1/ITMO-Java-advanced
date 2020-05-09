@@ -11,7 +11,7 @@ import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
 public class ClientPersonDemo {
     private static String[] DEFAULT_ARGS = {"John", "Smith", "1111 111111", "Alpha", "100"};
 
-    public static void main(final String[] args) throws BankDemoException {
+    public static void main(final String... args) throws BankDemoException {
         final String[] actualArgs = new String[DEFAULT_ARGS.length];
         for (int i = 0; i < DEFAULT_ARGS.length; i++) {
             if (args != null && args.length > i) {

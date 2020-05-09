@@ -9,7 +9,7 @@ import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
 
 public class ClientAccountDemo {
 
-    public static void main(final String[] args) throws BankDemoException {
+    public static void main(final String... args) throws BankDemoException {
         final String defaultId = "Alpha";
         final String accountId = (args != null && args.length >= 1) ? args[0] : defaultId;
 

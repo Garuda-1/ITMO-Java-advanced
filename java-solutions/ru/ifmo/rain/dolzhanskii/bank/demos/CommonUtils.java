@@ -8,8 +8,8 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
-class CommonUtils {
-    static Bank contactBank() throws BankDemoException {
+public class CommonUtils {
+    public static Bank contactBank() throws BankDemoException {
         final Bank bank;
         try {
             bank = (Bank) Naming.lookup(RemoteCredentials.getBankUrl());

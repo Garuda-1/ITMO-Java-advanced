@@ -6,8 +6,7 @@ import ru.ifmo.rain.dolzhanskii.bank.source.*;
 import java.rmi.RemoteException;
 
 @DisplayName("Account tests")
-class AccountTests extends CommonTests {
-
+class AccountTests extends RuntimeTests {
     @Test
     @DisplayName("Crete account")
     void testCreateAccount() throws RemoteException {
@@ -74,7 +73,7 @@ class AccountTests extends CommonTests {
     @Test
     @DisplayName("Multiple accounts simple")
     void testMultipleAccounts() throws InterruptedException {
-        multiThreadAccountQueries(1, 10, 10);
+        multiThreadAccountQueries(1, 100, 10);
     }
 
     @Test

@@ -6,7 +6,7 @@ import ru.ifmo.rain.dolzhanskii.bank.source.*;
 import java.rmi.RemoteException;
 
 @DisplayName("Person tests")
-class PersonTests extends CommonTests {
+class PersonTests extends RuntimeTests {
 
     @Test
     @DisplayName("Create person")

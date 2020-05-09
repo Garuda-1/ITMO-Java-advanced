@@ -11,6 +11,8 @@ module ru.ifmo.rain.dolzhanskii {
     requires java.compiler;
     requires java.rmi;
     requires org.junit.jupiter.api;
+    requires org.junit.platform.commons;
+    requires org.junit.platform.launcher;
 
     opens ru.ifmo.rain.dolzhanskii.implementor;
     exports ru.ifmo.rain.dolzhanskii.implementor;
@@ -21,5 +23,5 @@ module ru.ifmo.rain.dolzhanskii {
     opens ru.ifmo.rain.dolzhanskii.bank.source to java.rmi;
 
     exports ru.ifmo.rain.dolzhanskii.bank.test;
-    opens ru.ifmo.rain.dolzhanskii.bank.test to org.junit.jupiter.api;
+    opens ru.ifmo.rain.dolzhanskii.bank.test to org.junit.jupiter.api, org.junit.platform.commons;
 }
