@@ -1,164 +1,12 @@
 package ru.ifmo.rain.dolzhanskii.bank.test;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.*;
-import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.server.ExportException;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @DisplayName("Person tests")
-class PersonTests extends Assert {
-    private static final int PORT = 8888;
-    private static Bank bank;
-
-    private static final String TEST_FIRST_NAME = "John";
-    private static final String TEST_LAST_NAME = "Smith";
-    private static final String TEST_PASSPORT = "1111 111111";
-    private static final String TEST_SUB_ID = "ALPHA";
-    private static final int TEST_AMOUNT_DELTA = 100;
-
-    private static Person safeCreatePerson() throws RemoteException {
-        final Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, TEST_PASSPORT);
-        assertNotNull(person);
-        return person;
-    }
-
-    private static Account safeAddALinkedAccount(final Person person) throws RemoteException {
-        final Account account = person.createLinkedAccount(TEST_SUB_ID);
-        assertNotNull(account);
-        return account;
-    }
-
-    private static void validateDefaultPerson(final Person person) throws RemoteException {
-        assertNotNull(person);
-        assertEquals(TEST_FIRST_NAME, person.getFirstName());
-        assertEquals(TEST_LAST_NAME, person.getLastName());
-        assertEquals(TEST_PASSPORT, person.getPassport());
-    }
-
-    private static Account prepareLinkedAccount() throws RemoteException {
-        final Person person = safeCreatePerson();
-        final Account account = safeAddALinkedAccount(person);
-        account.setAmount(account.getAmount() + TEST_AMOUNT_DELTA);
-        return account;
-    }
-
-    private static void validateAccountsSync(final Account account1, final Account account2)
-            throws RemoteException {
-        assertNotNull(account1);
-        assertNotNull(account2);
-
-        assertEquals(TEST_AMOUNT_DELTA, account1.getAmount());
-        assertEquals(TEST_AMOUNT_DELTA, account2.getAmount());
-
-        account2.setAmount(account2.getAmount() + TEST_AMOUNT_DELTA);
-        assertEquals(2 * TEST_AMOUNT_DELTA, account1.getAmount());
-        assertEquals( 2 * TEST_AMOUNT_DELTA, account2.getAmount());
-    }
-
-    private static void validateAccountsDesync(final Account account1, final Account account2) throws RemoteException {
-        assertNotNull(account1);
-        assertNotNull(account2);
-
-        assertEquals(TEST_AMOUNT_DELTA, account1.getAmount());
-        assertEquals(TEST_AMOUNT_DELTA, account2.getAmount());
-
-        account1.setAmount(2 * TEST_AMOUNT_DELTA);
-        assertEquals(2 * TEST_AMOUNT_DELTA, account1.getAmount());
-        assertEquals(TEST_AMOUNT_DELTA, account2.getAmount());
-
-        account2.setAmount(3 * TEST_AMOUNT_DELTA);
-        assertEquals(2 * TEST_AMOUNT_DELTA, account1.getAmount());
-        assertEquals(3 * TEST_AMOUNT_DELTA, account2.getAmount());
-    }
-
-    private List<String> generateTestIds(final int count) {
-        return IntStream.range(0, count).mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    private void safeCreateMultiplePersonsWithSingleAccount(final List<String> personIds) {
-        personIds.forEach(passport -> {
-            try {
-                Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
-                assertNotNull(person);
-                safeAddALinkedAccount(person);
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
-    }
-
-    private void safeCreateMultiplePersonsWithMultipleAccounts(final List<String> personIds, final List<String> accountIds) {
-        personIds.forEach(passport -> {
-            try {
-                final Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
-                assertNotNull(person);
-                accountIds.forEach(subId -> {
-                    try {
-                        assertNotNull(person.createLinkedAccount(subId));
-                    } catch (final RemoteException e) {
-                        // Ignored
-                    }
-                });
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
-    }
-
-    private void safeAddMultipleLinkedAccounts(final List<String> accountIds, final Person person) {
-        accountIds.forEach(subId -> {
-            try {
-                assertNotNull(person.createLinkedAccount(subId));
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
-    }
-
-    @BeforeAll
-    static void beforeAll() throws RemoteException {
-        try {
-            LocateRegistry.createRegistry(PORT);
-        } catch (final ExportException e) {
-            // Ignored
-        }
-    }
-
-    @BeforeEach
-    void beforeEach() throws RemoteException, MalformedURLException {
-        bank = new RemoteBank(PORT);
-        UnicastRemoteObject.exportObject(bank, PORT);
-        Naming.rebind("//localhost:8888/bank", bank);
-    }
-
-    @AfterEach
-    void afterEach() throws NoSuchObjectException {
-        UnicastRemoteObject.unexportObject(bank, false);
-    }
-
-    @Test
-    @DisplayName("Demo application")
-    void testPersonDemo() throws RemoteException {
-        String[] empty = new String[0];
-        ClientAccountDemo.main(empty);
-    }
+class PersonTests extends CommonTests {
 
     @Test
     @DisplayName("Create person")
@@ -224,7 +72,7 @@ class PersonTests extends Assert {
     }
 
     @Test
-    @DisplayName("Remote person lookup")
+    @DisplayName("Local person lookup")
     void testLocalPersonLookup() throws RemoteException {
         safeCreatePerson();
         final Person person = bank.getLocalPerson(TEST_PASSPORT);
@@ -243,7 +91,7 @@ class PersonTests extends Assert {
     @Test
     @DisplayName("Remote person single account synchronization (bank external changes)")
     void testRemotePersonSyncWithBank() throws RemoteException {
-        final Account account1 = prepareLinkedAccount();
+        final Account account1 = safeCreatePersonWithLinkedAccount();
         final Account account2 = bank.getAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
         validateAccountsSync(account1, account2);
     }
@@ -251,7 +99,7 @@ class PersonTests extends Assert {
     @Test
     @DisplayName("Remote person single account synchronization (changes among persons)")
     void testRemotePersonSyncAmongPersons() throws RemoteException {
-        final Account account1 = prepareLinkedAccount();
+        final Account account1 = safeCreatePersonWithLinkedAccount();
         final Person person = safeCreatePerson();
         final Account account2 = person.getLinkedAccount(TEST_SUB_ID);
         validateAccountsSync(account1, account2);
@@ -260,7 +108,7 @@ class PersonTests extends Assert {
     @Test
     @DisplayName("Local person single account desynchronization (bank external changes)")
     void testLocalPersonDesyncWithBank() throws RemoteException {
-        prepareLinkedAccount();
+        safeCreatePersonWithLinkedAccount();
         final Person person = bank.getLocalPerson(TEST_PASSPORT);
         assertNotNull(person);
         final Account account1 = bank.getAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
@@ -272,7 +120,7 @@ class PersonTests extends Assert {
     @Test
     @DisplayName("Local person single account desynchronization (changes among persons)")
     void testLocalPersonDesyncAmongPersons() throws RemoteException {
-        final Account account1 = prepareLinkedAccount();
+        final Account account1 = safeCreatePersonWithLinkedAccount();
         final Person person = bank.getLocalPerson(TEST_PASSPORT);
         assertNotNull(person);
         final Account account2 = person.getLinkedAccount(TEST_SUB_ID);
@@ -323,197 +171,31 @@ class PersonTests extends Assert {
 
     @Test
     @DisplayName("Multiple linked accounts")
-    void testMultipleLinkedAccounts() throws RemoteException {
-        final int countOfAccounts = 100;
-        final Person person = safeCreatePerson();
-        final List<String> accountIds = generateTestIds(countOfAccounts);
-        safeAddMultipleLinkedAccounts(accountIds, person);
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = person.getLinkedAccount(accountIds.get(i));
-                assertNotNull(account);
-                account.setAmount(i + 1);
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = person.getLinkedAccount(accountIds.get(i));
-                assertNotNull(account);
-                assertEquals(i + 1, account.getAmount());
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
+    void testMultipleLinkedAccounts() throws InterruptedException {
+        multiThreadQueries(1, 1, 1, 50);
     }
 
     @Test
     @DisplayName("Multi thread requests single person single account")
-    void testMultiThreadRequestsSinglePersonSingleAccount() throws RemoteException, InterruptedException {
-        final int threadsCount = 500;
-
-        final Person personBasic = safeCreatePerson();
-        final Account accountBasic = safeAddALinkedAccount(personBasic);
-
-        final ExecutorService pool = Executors.newFixedThreadPool(threadsCount);
-        final Lock lock = new ReentrantLock();
-        IntStream.range(0, threadsCount).forEach(i -> pool.submit(() -> {
-            try {
-                final Person person = bank.getRemotePerson(TEST_PASSPORT);
-                assertNotNull(person);
-
-                final Account account = person.getLinkedAccount(TEST_SUB_ID);
-                assertNotNull(account);
-
-                lock.lock();
-                account.setAmount(account.getAmount() + TEST_AMOUNT_DELTA);
-                lock.unlock();
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        }));
-        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-        assertEquals(TEST_AMOUNT_DELTA * threadsCount, accountBasic.getAmount());
+    void testMultiThreadRequestsSinglePersonSingleAccount() throws InterruptedException {
+        multiThreadQueries(10, 10, 1, 1);
     }
 
     @Test
     @DisplayName("Multi thread requests single person multiple accounts")
-    void testMultiThreadRequestsSinglePersonMultipleAccounts() throws RemoteException, InterruptedException {
-        final int requestsPerAccount = 50;
-        final int countOfAccounts = 10;
-
-        final Person personBasic = safeCreatePerson();
-        final List<String> accountIds = generateTestIds(countOfAccounts);
-        safeAddMultipleLinkedAccounts(accountIds, personBasic);
-
-        final List<Integer> deltas = IntStream.range(1, countOfAccounts + 1).boxed()
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerAccount);
-        final Lock lock = new ReentrantLock();
-        IntStream.range(0, requestsPerAccount).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
-            try {
-                final Person person = bank.getRemotePerson(TEST_PASSPORT);
-                assertNotNull(person);
-                final Account account = person.getLinkedAccount(accountIds.get(j));
-                assertNotNull(account);
-
-                lock.lock();
-                account.setAmount(account.getAmount() + deltas.get(j));
-                lock.unlock();
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        })));
-        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = personBasic.getLinkedAccount(accountIds.get(i));
-                assertNotNull(account);
-                assertEquals(deltas.get(i) * requestsPerAccount, account.getAmount());
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
+    void testMultiThreadRequestsSinglePersonMultipleAccounts() throws InterruptedException {
+        multiThreadQueries(10, 10, 1, 10);
     }
 
     @Test
     @DisplayName("Multi thread requests multiple persons single account")
-    void testMultiThreadRequestsMultiplePersonsSingleAccount() throws RemoteException, InterruptedException {
-        final int requestsPerPerson = 50;
-        final int countOfPersons = 10;
-
-        final List<String> personIds = generateTestIds(countOfPersons);
-        safeCreateMultiplePersonsWithSingleAccount(personIds);
-        final List<Integer> deltas = IntStream.range(1, countOfPersons + 1).boxed()
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerPerson);
-        final Lock lock = new ReentrantLock();
-        IntStream.range(0, requestsPerPerson).forEach(i -> IntStream.range(0, countOfPersons).forEach(j -> pool.submit(() -> {
-            try {
-                final Person person = bank.getRemotePerson(personIds.get(j));
-                assertNotNull(person);
-                final Account account = person.getLinkedAccount(TEST_SUB_ID);
-                assertNotNull(account);
-
-                lock.lock();
-                account.setAmount(account.getAmount() + deltas.get(j));
-                lock.unlock();
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        })));
-        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-        IntStream.range(0, countOfPersons).forEach(i -> {
-            try {
-                final Person person = bank.getRemotePerson(personIds.get(i));
-                assertNotNull(person);
-
-                final Account account = person.getLinkedAccount(TEST_SUB_ID);
-                assertNotNull(account);
-
-                assertEquals(deltas.get(i) * requestsPerPerson, account.getAmount());
-            } catch (final RemoteException e) {
-                // Ignored
-            }
-        });
+    void testMultiThreadRequestsMultiplePersonsSingleAccount() throws InterruptedException {
+        multiThreadQueries(10, 10, 10, 1);
     }
 
     @Test
     @DisplayName("Multi thread requests multiple persons multiple accounts")
     void testMultiThreadRequestsMultiplePersonsMultipleAccounts() throws InterruptedException {
-        final int requestsPerPerson = 50;
-        final int countOfPersons = 10;
-        final int countOfAccounts = 10;
-
-        final List<String> personIds = generateTestIds(countOfPersons);
-        final List<String> accountIds = generateTestIds(countOfAccounts);
-        safeCreateMultiplePersonsWithMultipleAccounts(personIds, accountIds);
-        final List<Integer> deltas = IntStream.range(1, countOfPersons + 1).boxed()
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        final ExecutorService pool = Executors.newFixedThreadPool(requestsPerPerson);
-        final Lock lock = new ReentrantLock();
-        IntStream.range(0, requestsPerPerson).forEach(i ->
-                personIds.forEach(passport ->
-                        IntStream.range(0, countOfAccounts).forEach(j -> {
-                            try {
-                                final Person person = bank.getRemotePerson(passport);
-                                assertNotNull(person);
-
-                                final Account account = person.getLinkedAccount(accountIds.get(j));
-                                assertNotNull(account);
-
-                                lock.lock();
-                                account.setAmount(account.getAmount() + deltas.get(j));
-                                lock.unlock();
-                            } catch (final RemoteException e) {
-                                // Ignored
-                            }
-                        })));
-        pool.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-        personIds.forEach(passport -> {
-            IntStream.range(0, countOfAccounts).forEach(i -> {
-                try {
-                    final Person person = bank.getRemotePerson(passport);
-                    assertNotNull(person);
-
-                    final Account account = person.getLinkedAccount(accountIds.get(i));
-                    assertNotNull(account);
-
-                    assertEquals(deltas.get(i) * requestsPerPerson, account.getAmount());
-                } catch (final RemoteException e) {
-                    // Ignored
-                }
-            });
-        });
+        multiThreadQueries(5, 10, 5, 5);
     }
 }

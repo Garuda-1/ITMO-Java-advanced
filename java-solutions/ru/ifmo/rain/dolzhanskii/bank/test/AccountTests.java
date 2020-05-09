@@ -1,17 +1,9 @@
 package ru.ifmo.rain.dolzhanskii.bank.test;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.*;
-import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.server.ExportException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -23,38 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @DisplayName("Account tests")
-class AccountTests extends Assert {
-    private static final int PORT = 8888;
-    private static Bank bank;
-    private static final String TEST_ACCOUNT_ID = "test";
-
-    @BeforeAll
-    static void beforeAll() throws RemoteException {
-        try {
-            LocateRegistry.createRegistry(PORT);
-        } catch (final ExportException e) {
-            // Ignored
-        }
-    }
-
-    @BeforeEach
-    void beforeEach() throws RemoteException, MalformedURLException {
-        bank = new RemoteBank(PORT);
-        UnicastRemoteObject.exportObject(bank, PORT);
-        Naming.rebind("//localhost:8888/bank", bank);
-    }
-
-    @AfterEach
-    void afterEach() throws NoSuchObjectException {
-        UnicastRemoteObject.unexportObject(bank, false);
-    }
-
-    @Test
-    @DisplayName("Demo application")
-    void testClientApp() throws RemoteException  {
-        String[] empty = new String[0];
-        ClientAccountDemo.main(empty);
-    }
+class AccountTests extends CommonTests {
 
     @Test
     @DisplayName("Crete account")
