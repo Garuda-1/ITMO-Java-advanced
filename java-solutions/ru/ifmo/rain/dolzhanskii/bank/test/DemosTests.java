@@ -38,27 +38,27 @@ class DemosTests extends CommonTests {
         try {
             Naming.unbind(RemoteCredentials.getBankUrl());
         } catch (NotBoundException e) {
-            e.printStackTrace();
+            // Ignored
         }
     }
 
     @Test
     @DisplayName("Normal behavior (Account demo)")
-    void testNormalBehaviorAccount() throws RemoteException, BankDemoException {
+    void testNormalBehaviorAccount() throws BankDemoException {
         Server.main();
         ClientAccountDemo.main();
     }
 
     @Test
     @DisplayName("Normal behavior (Person demo)")
-    void testNormalBehaviorPerson() throws RemoteException, BankDemoException {
+    void testNormalBehaviorPerson() throws BankDemoException {
         Server.main();
         ClientPersonDemo.main();
     }
 
     @Test
     @DisplayName("No server started (Account demo)")
-    void testNoServerAccount() throws BankDemoException, RemoteException {
+    void testNoServerAccount() {
         Throwable throwable = assertThrows(BankDemoException.class, ClientAccountDemo::main);
         assertNotNull(throwable);
         assertEquals("Bank is not found", throwable.getMessage());
@@ -74,7 +74,7 @@ class DemosTests extends CommonTests {
 
     @Test
     @DisplayName("Invalid amount delta argument (Person demo)")
-    void testInvalidAmountDeltaArg() throws RemoteException {
+    void testInvalidAmountDeltaArg() {
         Server.main();
         final String[] args = {"X", "X", "X", "X", "X"};
         Throwable throwable = assertThrows(BankDemoException.class, () -> ClientPersonDemo.main(args));
@@ -84,7 +84,7 @@ class DemosTests extends CommonTests {
 
     @Test
     @DisplayName("Multiple queries (Account demo)")
-    void testMultipleQueriesAccount() throws RemoteException, BankDemoException, MalformedURLException {
+    void testMultipleQueriesAccount() throws RemoteException, BankDemoException {
         final int countOfQueries = 100;
         Server.main();
 
@@ -101,7 +101,7 @@ class DemosTests extends CommonTests {
 
     @Test
     @DisplayName("Multiple queries (Person demo)")
-    void testMultipleQueriesPerson() throws RemoteException, BankDemoException, MalformedURLException {
+    void testMultipleQueriesPerson() throws RemoteException, BankDemoException {
         final int countOfQueries = 100;
         final int deltaAmount = 500;
         Server.main();
