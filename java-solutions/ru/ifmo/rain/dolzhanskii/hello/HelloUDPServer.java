@@ -36,6 +36,7 @@ public class HelloUDPServer implements HelloServer {
         }
     }
 
+    // :NOTE: NPE
     @Override
     public void close() {
         listeners.shutdown();
@@ -91,18 +92,21 @@ public class HelloUDPServer implements HelloServer {
             return;
         }
 
-        try (HelloUDPServer server = new HelloUDPServer()) {
-            final int port = Integer.parseInt(args[0]);
-            final int threads = Integer.parseInt(args[1]);
-
+        final int port, threads;
+        try {
+            port = Integer.parseInt(args[0]);
+            threads = Integer.parseInt(args[1]);
+        } catch (final NumberFormatException e) {
+            System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
+            return;
+        }
+        try (final HelloUDPServer server = new HelloUDPServer()) {
             server.start(port, threads);
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("Server has been started. Press any key to terminate");
             reader.readLine();
-        } catch (NumberFormatException e) {
-            System.err.println("Failed to parse expected numeric argument: " + e.getMessage());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             System.err.println("IO error occurred: " + e.getMessage());
         }
     }
