@@ -56,11 +56,8 @@ public class HelloUDPClient implements HelloClient {
                             String.format("Sending message (attempt %d): '%s'", ++attempt, request));
                     final String response;
 
-                    try {
-                        HelloUDPUtils.stringToPacket(packet, request, hostSocket);
-                        socket.send(packet);
-                    } catch (final IOException e) {
-                        log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
+                    HelloUDPUtils.stringToPacket(packet, request, hostSocket);
+                    if (HelloUDPUtils.send(packet, socket)) {
                         continue;
                     }
 

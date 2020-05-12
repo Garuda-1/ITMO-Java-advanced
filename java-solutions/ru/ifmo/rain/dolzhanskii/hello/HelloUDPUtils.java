@@ -24,6 +24,19 @@ class HelloUDPUtils {
         return false;
     }
 
+    static boolean send(final DatagramPacket packet, final DatagramSocket socket) {
+        try {
+            socket.send(packet);
+        } catch (final IOException e) {
+            if (!socket.isClosed()) {
+                HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
+                        "Error occurred in attempt to send: " + new String(packet.getData()));
+            }
+            return true;
+        }
+        return false;
+    }
+
     static void stringToPacket(final DatagramPacket packet, final String s, final SocketAddress destination) {
         final byte[] payload = s.getBytes(StandardCharsets.UTF_8);
         packet.setData(payload, 0, payload.length);

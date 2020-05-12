@@ -67,14 +67,7 @@ public class HelloUDPServer implements HelloServer {
             final String response = "Hello, " + request;
             HelloUDPUtils.stringToPacket(packet, response, packet.getSocketAddress());
 
-            try {
-                socket.send(packet);
-            } catch (final IOException e) {
-                if (!socket.isClosed()) {
-                    HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
-                            "Error occurred in attempt to send response: " + new String(packet.getData()));
-                }
-            }
+            HelloUDPUtils.send(packet, socket);
         }
     }
 
