@@ -9,7 +9,7 @@ import java.rmi.server.*;
 import java.net.*;
 
 /**
- * Server
+ * Server demo
  */
 public class Server {
     public static void main(final String... args) {
