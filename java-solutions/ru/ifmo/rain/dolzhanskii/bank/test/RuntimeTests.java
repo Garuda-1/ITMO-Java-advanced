@@ -28,7 +28,7 @@ abstract class RuntimeTests extends CommonTests {
     static final String TEST_PASSPORT = "1111 111111";
     static final String TEST_SUB_ID = "ALPHA";
     static final String TEST_ACCOUNT_ID = "test";
-    static final int TEST_AMOUNT_DELTA = 100;
+    private static final int TEST_AMOUNT_DELTA = 100;
 
     @BeforeAll
     static void beforeAll() throws RemoteException {
