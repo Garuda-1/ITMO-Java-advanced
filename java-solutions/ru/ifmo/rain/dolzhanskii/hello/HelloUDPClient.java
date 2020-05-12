@@ -65,7 +65,6 @@ public class HelloUDPClient implements HelloClient {
                     }
                     try {
                         packet.setData(bufferRx, 0, bufferSizeRx);
-                        packet.setSocketAddress(hostSocket);
                         socket.receive(packet);
                         response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                                 StandardCharsets.UTF_8);
