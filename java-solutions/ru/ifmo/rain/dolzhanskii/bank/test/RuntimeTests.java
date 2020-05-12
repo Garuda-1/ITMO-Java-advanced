@@ -51,14 +51,20 @@ abstract class RuntimeTests extends CommonTests {
         return IntStream.range(0, count).mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
     }
 
-    static Account safeCreateAccount(final String id) throws RemoteException {
+    static Account safeCreateRemoteAccount(final String id) throws RemoteException {
         final Account account = bank.createAccount(id);
         assertNotNull(account);
         return account;
     }
 
-    static Account safeGetAccount(final String id) throws RemoteException {
-        final Account account = bank.getAccount(id);
+    static Account safeGetRemoteAccount(final String id) throws RemoteException {
+        final Account account = bank.getRemoteAccount(id);
+        assertNotNull(account);
+        return account;
+    }
+
+    static Account safeGetLocalAccount() throws RemoteException {
+        final Account account = bank.getLocalAccount(RuntimeTests.TEST_ACCOUNT_ID);
         assertNotNull(account);
         return account;
     }
@@ -71,6 +77,27 @@ abstract class RuntimeTests extends CommonTests {
                 // Ignored
             }
         });
+    }
+
+    static void validateLocalAndRemoteBehavior(final Account remoteAccount, final Account localAccount1,
+                                                       final Account localAccount2) throws RemoteException {
+        remoteAccount.setAmount(TEST_AMOUNT_DELTA);
+
+        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
+        assertEquals(0, localAccount1.getAmount());
+        assertEquals(0, localAccount2.getAmount());
+
+        localAccount1.setAmount(2 * TEST_AMOUNT_DELTA);
+
+        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
+        assertEquals(2 * TEST_AMOUNT_DELTA, localAccount1.getAmount());
+        assertEquals(0, localAccount2.getAmount());
+
+        localAccount2.setAmount(3 * TEST_AMOUNT_DELTA);
+
+        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
+        assertEquals(2 * TEST_AMOUNT_DELTA, localAccount1.getAmount());
+        assertEquals(3 * TEST_AMOUNT_DELTA, localAccount2.getAmount());
     }
 
     static void multiThreadAccountQueries(final int countOfThreads, final int requestsPerItem,
@@ -86,7 +113,7 @@ abstract class RuntimeTests extends CommonTests {
         IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
                 .forEach(i -> pool.submit(() -> {
                     try {
-                        final Account account = safeGetAccount(ids.get(i));
+                        final Account account = safeGetRemoteAccount(ids.get(i));
                         lock.lock();
                         account.setAmount(account.getAmount() + deltas.get(i));
                         lock.unlock();
@@ -98,7 +125,7 @@ abstract class RuntimeTests extends CommonTests {
 
         IntStream.range(0, countOfAccounts).forEach(i -> {
             try {
-                final Account account = safeGetAccount(ids.get(i));
+                final Account account = safeGetRemoteAccount(ids.get(i));
                 assertEquals(deltas.get(i) * requestsPerItem, account.getAmount());
             } catch (final RemoteException e) {
                 // Ignored
@@ -114,6 +141,12 @@ abstract class RuntimeTests extends CommonTests {
 
     static Account safeAddLinkedAccount(final Person person) throws RemoteException {
         final Account account = person.createLinkedAccount(TEST_SUB_ID);
+        assertNotNull(account);
+        return account;
+    }
+
+    static Account safeGetLinkedAccount(final Person person) throws RemoteException {
+        final Account account = person.getLinkedAccount(TEST_SUB_ID);
         assertNotNull(account);
         return account;
     }
@@ -161,7 +194,8 @@ abstract class RuntimeTests extends CommonTests {
         assertEquals(3 * TEST_AMOUNT_DELTA, account2.getAmount());
     }
 
-    private static void safeCreateMultiplePersonsWithMultipleAccounts(final List<String> passports, final List<String> subIds) {
+    private static void safeCreateMultiplePersonsWithMultipleAccounts(final List<String> passports,
+                                                                      final List<String> subIds) {
         passports.forEach(passport -> {
             try {
                 final Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
@@ -211,7 +245,8 @@ abstract class RuntimeTests extends CommonTests {
                         // Ignored
                     }
                 }))));
-        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons, TimeUnit.MILLISECONDS);
+        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons,
+                TimeUnit.MILLISECONDS);
 
         IntStream.range(0, countOfPersons).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> {
             try {

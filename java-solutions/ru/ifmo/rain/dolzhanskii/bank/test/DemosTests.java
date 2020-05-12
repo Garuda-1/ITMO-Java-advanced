@@ -94,7 +94,7 @@ class DemosTests extends CommonTests {
         }
 
         final Bank bank = contactBank();
-        final Account account = bank.getAccount(args[0]);
+        final Account account = bank.getRemoteAccount(args[0]);
         assertNotNull(account);
         assertEquals(countOfQueries * 100, account.getAmount());
     }

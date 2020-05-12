@@ -28,6 +28,12 @@ javac -cp . -p . --module-path ${LIB_PATH} \
     --add-modules org.junit.platform.launcher \
     ${SRC_PATH}/*/*.java -d ${OUT_PATH}
 
+if [[ ${?} != 0 ]]
+then
+    cd ${BASE_DIR}
+    exit ${?}
+fi
+
 cd ${OUT_PATH}
 
 java -jar ${JUNIT_JAR_PATH} -cp . --scan-class-path
@@ -35,10 +41,4 @@ java -jar ${JUNIT_JAR_PATH} -cp . --scan-class-path
 RET_CODE=${?}
 
 cd ${BASE_DIR}
-
-if [[ ${RET_CODE} == "0" ]]
-then
-    exit 0
-else
-    exit 1
-fi
+exit ${RET_CODE}

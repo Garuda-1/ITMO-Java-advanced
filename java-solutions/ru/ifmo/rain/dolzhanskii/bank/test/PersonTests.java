@@ -93,7 +93,7 @@ class PersonTests extends RuntimeTests {
     void testAccountBonding() throws RemoteException {
         final int amount = 100;
 
-        final Account account1 = safeCreateAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
+        final Account account1 = safeCreateRemoteAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
         account1.setAmount(amount);
         final Person person = safeCreatePerson();
         assertNull(person.getLinkedAccount(TEST_SUB_ID));
@@ -106,7 +106,7 @@ class PersonTests extends RuntimeTests {
     @DisplayName("Remote person single account synchronization (bank external changes)")
     void testRemotePersonSyncWithBank() throws RemoteException {
         final Account account1 = safeCreatePersonWithLinkedAccount();
-        final Account account2 = bank.getAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
+        final Account account2 = bank.getRemoteAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
         validateAccountsSync(account1, account2);
     }
 
@@ -125,7 +125,7 @@ class PersonTests extends RuntimeTests {
         safeCreatePersonWithLinkedAccount();
         final Person person = bank.getLocalPerson(TEST_PASSPORT);
         assertNotNull(person);
-        final Account account1 = bank.getAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
+        final Account account1 = bank.getRemoteAccount(TEST_PASSPORT + ":" + TEST_SUB_ID);
         final Account account2 = person.getLinkedAccount(TEST_SUB_ID);
 
         validateAccountsDesync(account1, account2);
@@ -155,32 +155,11 @@ class PersonTests extends RuntimeTests {
         Person localPerson2 = bank.getLocalPerson(TEST_PASSPORT);
         assertNotNull(localPerson1);
 
-        Account remoteAccount = remotePerson.getLinkedAccount(TEST_SUB_ID);
-        assertNotNull(remoteAccount);
+        Account remoteAccount = safeGetLinkedAccount(remotePerson);
+        Account localAccount1 = safeGetLinkedAccount(localPerson1);
+        Account localAccount2 = safeGetLinkedAccount(localPerson2);
 
-        Account localAccount1 = localPerson1.getLinkedAccount(TEST_SUB_ID);
-        assertNotNull(localAccount1);
-
-        Account localAccount2 = localPerson2.getLinkedAccount(TEST_SUB_ID);
-        assertNotNull(localAccount2);
-
-        remoteAccount.setAmount(TEST_AMOUNT_DELTA);
-
-        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
-        assertEquals(0, localAccount1.getAmount());
-        assertEquals(0, localAccount2.getAmount());
-
-        localAccount1.setAmount(2 * TEST_AMOUNT_DELTA);
-
-        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
-        assertEquals(2 * TEST_AMOUNT_DELTA, localAccount1.getAmount());
-        assertEquals(0, localAccount2.getAmount());
-
-        localAccount2.setAmount(3 * TEST_AMOUNT_DELTA);
-
-        assertEquals(TEST_AMOUNT_DELTA, remoteAccount.getAmount());
-        assertEquals(2 * TEST_AMOUNT_DELTA, localAccount1.getAmount());
-        assertEquals(3 * TEST_AMOUNT_DELTA, localAccount2.getAmount());
+        validateLocalAndRemoteBehavior(remoteAccount, localAccount1, localAccount2);
     }
 
     @Test

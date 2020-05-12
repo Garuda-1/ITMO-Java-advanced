@@ -16,7 +16,7 @@ public class ClientAccountDemo {
         final Bank bank = contactBank();
 
         try {
-            Account account = bank.getAccount(accountId);
+            Account account = bank.getRemoteAccount(accountId);
             if (account == null) {
                 System.out.println("Creating account");
                 account = bank.createAccount(accountId);

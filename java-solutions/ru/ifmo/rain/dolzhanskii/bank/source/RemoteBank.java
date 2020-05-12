@@ -15,33 +15,66 @@ public class RemoteBank implements Bank {
     }
 
     public Account createAccount(final String id) throws RemoteException {
-        System.out.println("Creating account " + id);
-        final Account account = new RemoteAccount(id);
-        if (accounts.putIfAbsent(id, account) == null) {
-            UnicastRemoteObject.exportObject(account, port);
-            return account;
-        } else {
-            return getAccount(id);
+        final RemoteException exception = new RemoteException("Failed to export account");
+
+        final Account account = accounts.computeIfAbsent(id, accountId -> {
+            try {
+                System.out.println("Creating account " + id);
+                final Account tmpAccount = new RemoteAccount(accountId);
+                UnicastRemoteObject.exportObject(tmpAccount, port);
+                return tmpAccount;
+            } catch (RemoteException e) {
+                exception.addSuppressed(e);
+            }
+            return null;
+        });
+
+        if (account == null) {
+            throw exception;
         }
+
+        return account;
     }
 
-    public Account getAccount(final String id) {
-        System.out.println("Retrieving account " + id);
+    public Account getRemoteAccount(final String id) {
+        System.out.println("Retrieving remote account " + id);
         return accounts.get(id);
     }
 
-    public Person createPerson(String firstName, String lastName, String passport) throws RemoteException {
-        System.out.println("Creating person " + lastName + " " + firstName + " " + passport);
-        final Person person = new RemotePerson(firstName, lastName, passport);
-        if (persons.putIfAbsent(passport, person) == null) {
-            UnicastRemoteObject.exportObject(person, port);
-            return person;
+    public Account getLocalAccount(final String id) throws RemoteException {
+        System.out.println("Retrieving local account " + id);
+        Account account = accounts.get(id);
+        if (account == null) {
+            return null;
         } else {
-            return getRemotePerson(passport);
+            return new LocalAccount(account);
         }
     }
 
-    public Person getLocalPerson(String passport) throws RemoteException {
+    public Person createPerson(final String firstName, final String lastName, final String passport)
+            throws RemoteException {
+        final RemoteException exception = new RemoteException("Failed to export person");
+
+        final Person person = persons.computeIfAbsent(passport, accountId -> {
+            try {
+                System.out.println("Creating person " + lastName + " " + firstName + " " + passport);
+                final Person tmpPerson = new RemotePerson(firstName, lastName, passport);
+                UnicastRemoteObject.exportObject(tmpPerson, port);
+                return tmpPerson;
+            } catch (RemoteException e) {
+                exception.addSuppressed(e);
+            }
+            return null;
+        });
+
+        if (person == null) {
+            throw exception;
+        }
+
+        return person;
+    }
+
+    public Person getLocalPerson(final String passport) throws RemoteException {
         System.out.println("Retrieving local person by passport " + passport);
         Person person = persons.get(passport);
         if (person == null) {
@@ -51,7 +84,7 @@ public class RemoteBank implements Bank {
         }
     }
 
-    public Person getRemotePerson(String passport) {
+    public Person getRemotePerson(final String passport) {
         System.out.println("Retrieving remote person by passport " + passport);
         return persons.get(passport);
     }

@@ -10,7 +10,7 @@ class AccountTests extends RuntimeTests {
     @Test
     @DisplayName("Crete account")
     void testCreateAccount() throws RemoteException {
-        final Account account = safeCreateAccount(TEST_ACCOUNT_ID);
+        final Account account = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
         assertEquals(TEST_ACCOUNT_ID, account.getId());
         assertEquals(0, account.getAmount());
     }
@@ -18,7 +18,7 @@ class AccountTests extends RuntimeTests {
     @Test
     @DisplayName("Non existing account")
     void testNonExistingAccount() throws RemoteException {
-        assertNull(bank.getAccount(TEST_ACCOUNT_ID));
+        assertNull(bank.getRemoteAccount(TEST_ACCOUNT_ID));
     }
 
     @Test
@@ -26,9 +26,9 @@ class AccountTests extends RuntimeTests {
     void testAlreadyExistingAccount() throws RemoteException {
         final int amount = 100;
 
-        final Account account1 = safeCreateAccount(TEST_ACCOUNT_ID);
+        final Account account1 = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
         account1.setAmount(amount);
-        final Account account2 = safeCreateAccount(TEST_ACCOUNT_ID);
+        final Account account2 = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
         assertEquals(amount, account2.getAmount());
     }
 
@@ -36,7 +36,7 @@ class AccountTests extends RuntimeTests {
     @DisplayName("Create and get account")
     void testCreateAndGetAccount() throws RemoteException {
         bank.createAccount(TEST_ACCOUNT_ID);
-        final Account account = safeGetAccount(TEST_ACCOUNT_ID);
+        final Account account = safeGetRemoteAccount(TEST_ACCOUNT_ID);
         assertEquals(TEST_ACCOUNT_ID, account.getId());
         assertEquals(0, account.getAmount());
     }
@@ -46,7 +46,7 @@ class AccountTests extends RuntimeTests {
     void testSetAmount() throws RemoteException {
         final int amount = 100;
 
-        final Account account = safeCreateAccount(TEST_ACCOUNT_ID);
+        final Account account = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
         account.setAmount(amount);
         assertEquals(amount, account.getAmount());
     }
@@ -57,8 +57,8 @@ class AccountTests extends RuntimeTests {
         final int amount1 = 100;
         final int amount2 = 200;
 
-        final Account account1 = safeCreateAccount(TEST_ACCOUNT_ID);
-        final Account account2 = safeCreateAccount(TEST_ACCOUNT_ID);
+        final Account account1 = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
+        final Account account2 = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
 
         account1.setAmount(amount1);
         assertEquals(amount1, account1.getAmount());
@@ -67,6 +67,16 @@ class AccountTests extends RuntimeTests {
         account2.setAmount(amount2);
         assertEquals(amount2, account1.getAmount());
         assertEquals(amount2, account2.getAmount());
+    }
+
+    @Test
+    @DisplayName("Remote and local accounts desync")
+    void testRemoteAndLocalAccountsDesync() throws RemoteException {
+        final Account remoteAccount = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
+        final Account localAccount1 = safeGetLocalAccount();
+        final Account localAccount2 = safeGetLocalAccount();
+
+        validateLocalAndRemoteBehavior(remoteAccount, localAccount1, localAccount2);
     }
 
     @Test

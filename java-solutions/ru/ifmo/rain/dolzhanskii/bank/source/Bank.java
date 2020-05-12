@@ -12,11 +12,18 @@ public interface Bank extends Remote {
     Account createAccount(String id) throws RemoteException;
 
     /**
-     * Returns account by identifier.
+     * Returns remote account by identifier.
      * @param id account id
      * @return account with specified identifier or {@code null} if such account does not exist
      */
-    Account getAccount(String id) throws RemoteException;
+    Account getRemoteAccount(String id) throws RemoteException;
+
+    /**
+     * Returns local account by identifier.
+     * @param id account id
+     * @return account with specified identifier or {@code null} if such account does not exist
+     */
+    Account getLocalAccount(String id) throws RemoteException;
 
     /**
      * Creates a new person with specified name and passport number as a key or returns an existing person with the same
