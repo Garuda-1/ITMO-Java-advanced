@@ -18,8 +18,7 @@ class AccountTests extends RuntimeTests {
     @Test
     @DisplayName("Non existing account")
     void testNonExistingAccount() throws RemoteException {
-        final Account account = bank.getAccount(TEST_ACCOUNT_ID);
-        assertNull(account);
+        assertNull(bank.getAccount(TEST_ACCOUNT_ID));
     }
 
     @Test

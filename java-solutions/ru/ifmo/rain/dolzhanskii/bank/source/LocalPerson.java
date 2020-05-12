@@ -6,22 +6,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalPerson extends AbstractPerson implements Serializable {
-    LocalPerson(RemotePerson remotePerson) throws RemoteException {
+    LocalPerson(final RemotePerson remotePerson) throws RemoteException {
         super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(),
                 exportAccounts(remotePerson));
     }
 
-    private static ConcurrentHashMap<String, Account> exportAccounts(RemotePerson remotePerson) throws RemoteException {
-        ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>();
-        for (Map.Entry<String, Account> entry : remotePerson.linkedAccounts.entrySet()) {
-            Account account = entry.getValue();
+    private static ConcurrentHashMap<String, Account> exportAccounts(final RemotePerson remotePerson) throws RemoteException {
+        final ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>();
+        for (final Map.Entry<String, Account> entry : remotePerson.linkedAccounts.entrySet()) {
+            final Account account = entry.getValue();
             linkedAccounts.put(entry.getKey(), new LocalAccount(account));
         }
         return linkedAccounts;
     }
 
     @Override
-    public synchronized Account createLinkedAccount(String subId) {
+    public synchronized Account createLinkedAccount(final String subId) {
         final String id = getAccountId(subId);
         final Account account = new RemoteAccount(id);
         System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +

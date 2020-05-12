@@ -37,9 +37,4 @@ RET_CODE=${?}
 
 cd ${BASE_DIR}
 
-if [[ ${RET_CODE} == "0" ]]
-then
-    exit 0
-else
-    exit 1
-fi
+exit ${RET_CODE}

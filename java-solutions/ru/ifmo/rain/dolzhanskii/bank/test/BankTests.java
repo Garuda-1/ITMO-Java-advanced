@@ -14,7 +14,7 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 
 public class BankTests {
     public static void main(String[] args) {
-        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        final LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(
                         selectClass(AccountTests.class),
                         selectClass(PersonTests.class),
@@ -30,6 +30,6 @@ public class BankTests {
 
         summary.printTo(new PrintWriter(new OutputStreamWriter(System.out)));
 
-        System.exit(summary.getFailures().size() == 0 ? 0 : -1);
+        System.exit(summary.getFailures().size() == 0 ? 0 : 1);
     }
 }

@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractPerson implements Person {
     private final String firstName, lastName, passport;
-    final ConcurrentMap<String, Account> linkedAccounts;
+    protected final ConcurrentMap<String, Account> linkedAccounts;
 
     AbstractPerson(final String firstName, final String lastName, final String passport,
                    final ConcurrentMap<String, Account> linkedAccounts) {
