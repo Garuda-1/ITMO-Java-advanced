@@ -13,9 +13,18 @@ public class LocalPerson extends AbstractPerson implements Serializable {
 
     private static ConcurrentHashMap<String, Account> exportAccounts(final RemotePerson remotePerson) throws RemoteException {
         final ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>();
-        for (final Map.Entry<String, Account> entry : remotePerson.linkedAccounts.entrySet()) {
-            final Account account = entry.getValue();
-            linkedAccounts.put(entry.getKey(), new LocalAccount(account));
+        final RemoteException exception = new RemoteException("Failed to export linked account");
+
+        remotePerson.linkedAccounts.forEach((key, account) -> {
+            try {
+                linkedAccounts.put(key, new LocalAccount(account));
+            } catch (final RemoteException e) {
+                exception.addSuppressed(e);
+            }
+        });
+
+        if (exception.getSuppressed().length != 0) {
+            throw exception;
         }
         return linkedAccounts;
     }
