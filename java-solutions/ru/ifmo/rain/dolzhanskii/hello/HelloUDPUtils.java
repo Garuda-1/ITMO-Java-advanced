@@ -1,10 +1,29 @@
 package ru.ifmo.rain.dolzhanskii.hello;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 class HelloUDPUtils {
+    static DatagramPacket initPacket(final int bufferSizeRx) {
+        return new DatagramPacket(new byte[bufferSizeRx], bufferSizeRx);
+    }
+
+    static boolean receive(final DatagramPacket packet, final DatagramSocket socket) {
+        try {
+            socket.receive(packet);
+        } catch (final IOException e) {
+            if (!socket.isClosed()) {
+                HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
+                        "Error occurred during receiving packet from socket: " + e.getMessage());
+            }
+            return true;
+        }
+        return false;
+    }
+
     static void stringToPacket(final DatagramPacket packet, final String s, final SocketAddress destination) {
         final byte[] payload = s.getBytes(StandardCharsets.UTF_8);
         packet.setData(payload, 0, payload.length);

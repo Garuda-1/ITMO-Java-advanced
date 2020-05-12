@@ -36,32 +36,29 @@ public class HelloUDPServer implements HelloServer {
         }
     }
 
-    // :NOTE: NPE
     @Override
     public void close() {
-        listeners.shutdown();
-        socket.close();
-        try {
-            listeners.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
-        } catch (final InterruptedException e) {
-            // Ignored
+        if (socket != null) {
+            socket.close();
+        }
+        if (listeners != null) {
+            listeners.shutdown();
+            try {
+                listeners.awaitTermination(TERMINATION_AWAIT, TimeUnit.SECONDS);
+            } catch (final InterruptedException e) {
+                // Ignored
+            }
         }
     }
 
     private static void listen(final DatagramSocket socket, final int bufferSizeRx) {
-        final byte[] bufferRx = new byte[bufferSizeRx];
-        final DatagramPacket packet = new DatagramPacket(bufferRx, bufferSizeRx);
+        final DatagramPacket packet = HelloUDPUtils.initPacket(bufferSizeRx);
+        final byte[] bufferRx = packet.getData();
 
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
             packet.setData(bufferRx, 0, bufferSizeRx);
 
-            try {
-                socket.receive(packet);
-            } catch (final IOException e) {
-                if (!socket.isClosed()) {
-                    HelloUDPUtils.log(HelloUDPUtils.logType.ERROR,
-                            "Error occurred during receiving packet from socket: " + e.getMessage());
-                }
+            if (HelloUDPUtils.receive(packet, socket)) {
                 continue;
             }
 
@@ -102,7 +99,6 @@ public class HelloUDPServer implements HelloServer {
         }
         try (final HelloUDPServer server = new HelloUDPServer()) {
             server.start(port, threads);
-
             final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("Server has been started. Press any key to terminate");
             reader.readLine();

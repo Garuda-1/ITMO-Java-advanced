@@ -43,8 +43,8 @@ public class HelloUDPClient implements HelloClient {
             socket.setSoTimeout(SOCKET_TIMEOUT_MS);
 
             final int bufferSizeRx = socket.getReceiveBufferSize();
-            final byte[] bufferRx = new byte[bufferSizeRx];
-            final DatagramPacket packet = new DatagramPacket(bufferRx, bufferSizeRx);
+            final DatagramPacket packet = HelloUDPUtils.initPacket(bufferSizeRx);
+            final byte[] bufferRx = packet.getData();
 
             for (int requestId = 0; requestId < requests; requestId++) {
                 final String request = prefix + threadId + '_' + requestId;
@@ -63,15 +63,13 @@ public class HelloUDPClient implements HelloClient {
                         log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to send");
                         continue;
                     }
-                    try {
-                        packet.setData(bufferRx, 0, bufferSizeRx);
-                        socket.receive(packet);
-                        response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
-                                StandardCharsets.UTF_8);
-                    } catch (final IOException e) {
-                        log(HelloUDPUtils.logType.ERROR, threadId, "Error occurred during attempt to receive");
+
+                    packet.setData(bufferRx, 0, bufferSizeRx);
+                    if (HelloUDPUtils.receive(packet, socket)) {
                         continue;
                     }
+                    response = new String(packet.getData(), packet.getOffset(), packet.getLength(), StandardCharsets.UTF_8);
+
                     if (HelloUDPUtils.validate(response, threadId, requestId)) {
                         log(HelloUDPUtils.logType.INFO, threadId,
                                 String.format("Received valid message: '%s'", response));
