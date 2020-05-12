@@ -8,6 +8,9 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.net.*;
 
+/**
+ * Server
+ */
 public class Server {
     public static void main(final String... args) {
         final Bank bank = new RemoteBank(RemoteCredentials.getBankPort());
