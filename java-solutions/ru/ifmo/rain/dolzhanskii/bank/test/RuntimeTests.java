@@ -20,7 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-abstract class RuntimeTests extends CommonTests {
+public abstract class RuntimeTests extends CommonTests {
     protected static Bank bank;
 
     static final String TEST_FIRST_NAME = "John";
@@ -48,7 +48,7 @@ abstract class RuntimeTests extends CommonTests {
     }
 
     private static void checkException(final RemoteException exception) throws RemoteException {
-        if (exception.getSuppressed().length == 0) {
+        if (exception.getSuppressed().length != 0) {
             throw exception;
         }
     }
@@ -108,6 +108,12 @@ abstract class RuntimeTests extends CommonTests {
         assertEquals(3 * TEST_AMOUNT_DELTA, localAccount2.getAmount());
     }
 
+    public static void safeIncreaseAmount(final Account account, final Lock lock, final int amountDelta) throws RemoteException {
+        lock.lock();
+        account.setAmount(account.getAmount() + amountDelta);
+        lock.unlock();
+    }
+
     static void multiThreadAccountQueries(final int countOfThreads, final int requestsPerItem,
                                           final int countOfAccounts) throws InterruptedException, RemoteException {
         final List<Integer> deltas = IntStream.range(0, countOfAccounts).boxed()
@@ -123,9 +129,7 @@ abstract class RuntimeTests extends CommonTests {
                 .forEach(i -> pool.submit(() -> {
                     try {
                         final Account account = safeGetRemoteAccount(ids.get(i));
-                        lock.lock();
-                        account.setAmount(account.getAmount() + deltas.get(i));
-                        lock.unlock();
+                        safeIncreaseAmount(account, lock, deltas.get(i));
                     } catch (final RemoteException e) {
                         exception.addSuppressed(e);
                     }
@@ -257,9 +261,7 @@ abstract class RuntimeTests extends CommonTests {
                 .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
                     try {
                         final Account account = safeGetLinkedAccount(passports.get(i), subIds.get(j));
-                        lock.lock();
-                        account.setAmount(account.getAmount() + deltas.get(i).get(j));
-                        lock.unlock();
+                        safeIncreaseAmount(account, lock, deltas.get(i).get(j));
                     } catch (final RemoteException e) {
                         exception.addSuppressed(e);
                     }

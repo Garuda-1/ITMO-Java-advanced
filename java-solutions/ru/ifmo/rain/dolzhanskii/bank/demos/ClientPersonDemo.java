@@ -3,8 +3,10 @@ package ru.ifmo.rain.dolzhanskii.bank.demos;
 import ru.ifmo.rain.dolzhanskii.bank.source.Account;
 import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.source.Person;
+import ru.ifmo.rain.dolzhanskii.bank.test.RuntimeTests;
 
 import java.rmi.RemoteException;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
 
@@ -65,7 +67,9 @@ public class ClientPersonDemo {
 
             System.out.println("Account info: id = " + account.getId() + ", amount = " + account.getAmount());
             System.out.println("Adding " + amount);
-            account.setAmount(account.getAmount() + amount);
+
+            RuntimeTests.safeIncreaseAmount(account, new ReentrantLock(), amount);
+
             System.out.println("Updated account info: id = " + account.getId() + ", amount = " + account.getAmount());
         } catch (final RemoteException e) {
             throw new BankDemoException("Remote exception occurred", e);
