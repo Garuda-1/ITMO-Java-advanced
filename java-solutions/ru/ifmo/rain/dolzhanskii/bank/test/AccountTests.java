@@ -81,19 +81,19 @@ class AccountTests extends RuntimeTests {
 
     @Test
     @DisplayName("Multiple accounts simple")
-    void testMultipleAccounts() throws InterruptedException {
+    void testMultipleAccounts() throws InterruptedException, RemoteException {
         multiThreadAccountQueries(1, 100, 10);
     }
 
     @Test
     @DisplayName("Multi thread requests single account")
-    void testMultiThreadRequestsSingle() throws InterruptedException {
+    void testMultiThreadRequestsSingle() throws InterruptedException, RemoteException {
         multiThreadAccountQueries(10, 10, 1);
     }
 
     @Test
     @DisplayName("Multiple accounts multi threaded")
-    void testMultipleAccountMultiThread() throws InterruptedException {
+    void testMultipleAccountMultiThread() throws InterruptedException, RemoteException {
         multiThreadAccountQueries(10, 10, 10);
     }
 }

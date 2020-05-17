@@ -164,31 +164,31 @@ class PersonTests extends RuntimeTests {
 
     @Test
     @DisplayName("Multiple linked accounts")
-    void testMultipleLinkedAccounts() throws InterruptedException {
+    void testMultipleLinkedAccounts() throws InterruptedException, RemoteException {
         multiThreadPersonQueries(1, 1, 1, 50);
     }
 
     @Test
     @DisplayName("Multi thread requests single person single account")
-    void testMultiThreadRequestsSinglePersonSingleAccount() throws InterruptedException {
+    void testMultiThreadRequestsSinglePersonSingleAccount() throws InterruptedException, RemoteException {
         multiThreadPersonQueries(10, 10, 1, 1);
     }
 
     @Test
     @DisplayName("Multi thread requests single person multiple accounts")
-    void testMultiThreadRequestsSinglePersonMultipleAccounts() throws InterruptedException {
+    void testMultiThreadRequestsSinglePersonMultipleAccounts() throws InterruptedException, RemoteException {
         multiThreadPersonQueries(10, 10, 1, 10);
     }
 
     @Test
     @DisplayName("Multi thread requests multiple persons single account")
-    void testMultiThreadRequestsMultiplePersonsSingleAccount() throws InterruptedException {
+    void testMultiThreadRequestsMultiplePersonsSingleAccount() throws InterruptedException, RemoteException {
         multiThreadPersonQueries(10, 10, 10, 1);
     }
 
     @Test
     @DisplayName("Multi thread requests multiple persons multiple accounts")
-    void testMultiThreadRequestsMultiplePersonsMultipleAccounts() throws InterruptedException {
+    void testMultiThreadRequestsMultiplePersonsMultipleAccounts() throws InterruptedException, RemoteException {
         multiThreadPersonQueries(5, 10, 5, 5);
     }
 }

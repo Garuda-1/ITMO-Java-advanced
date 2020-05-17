@@ -7,9 +7,6 @@ import java.rmi.RemoteException;
 
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
 
-/**
- * Client
- */
 public class ClientAccountDemo {
 
     public static void main(final String... args) throws BankDemoException {
