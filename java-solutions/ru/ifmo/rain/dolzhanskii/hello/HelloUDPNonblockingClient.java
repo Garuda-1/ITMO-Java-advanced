@@ -52,6 +52,7 @@ public class HelloUDPNonblockingClient implements HelloClient {
 
             for (final Iterator<SelectionKey> i = selector.selectedKeys().iterator(); i.hasNext();) {
                 final SelectionKey key = i.next();
+
                 if (key.isWritable()) {
                     handleWrite(key, prefix);
                 }

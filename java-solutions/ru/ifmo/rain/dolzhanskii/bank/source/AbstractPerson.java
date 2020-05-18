@@ -1,8 +1,9 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentMap;
 
-public abstract class AbstractPerson implements Person {
+public abstract class AbstractPerson implements Person, Serializable {
     private final String firstName, lastName, passport;
     protected final ConcurrentMap<String, Account> linkedAccounts;
 

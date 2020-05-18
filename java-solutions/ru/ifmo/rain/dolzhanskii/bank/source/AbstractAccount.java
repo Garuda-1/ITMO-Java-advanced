@@ -1,6 +1,8 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
-public abstract class AbstractAccount implements Account {
+import java.io.Serializable;
+
+public abstract class AbstractAccount implements Account, Serializable {
     private final String id;
     private int amount;
 
