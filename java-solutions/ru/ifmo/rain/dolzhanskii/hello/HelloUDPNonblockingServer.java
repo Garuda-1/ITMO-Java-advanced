@@ -177,6 +177,6 @@ public class HelloUDPNonblockingServer implements HelloServer {
     }
 
     public static void main(final String[] args) {
-        serverMain(args, HelloUDPServer.class);
+        serverMain(args, HelloUDPNonblockingServer.class);
     }
 }
