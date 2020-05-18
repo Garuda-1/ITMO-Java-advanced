@@ -6,7 +6,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RemotePerson extends AbstractPerson {
+class RemotePerson extends AbstractPerson {
     private final Bank bank;
 
     RemotePerson(final String firstName, final String lastName, final String passport) throws RemoteException {

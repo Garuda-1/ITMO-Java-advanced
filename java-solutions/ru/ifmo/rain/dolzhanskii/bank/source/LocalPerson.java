@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class LocalPerson extends AbstractPerson implements Serializable {
+class LocalPerson extends AbstractPerson implements Serializable {
     LocalPerson(final RemotePerson remotePerson) throws RemoteException {
         super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(),
                 exportAccounts(remotePerson));
