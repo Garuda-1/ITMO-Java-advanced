@@ -36,7 +36,7 @@ fi
 
 cd ${OUT_PATH}
 
-java -jar ${JUNIT_JAR_PATH} -cp . --scan-class-path
+java -jar ${JUNIT_JAR_PATH} -cp ${OUT_PATH} --scan-class-path
 
 RET_CODE=${?}
 
