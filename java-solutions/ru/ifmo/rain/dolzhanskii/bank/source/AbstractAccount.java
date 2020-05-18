@@ -1,7 +1,5 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
-import java.rmi.RemoteException;
-
 public abstract class AbstractAccount implements Account {
     private final String id;
     private int amount;

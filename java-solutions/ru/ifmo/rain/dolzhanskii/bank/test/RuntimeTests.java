@@ -200,23 +200,10 @@ public abstract class RuntimeTests extends CommonTests {
         checkException(exception);
     }
 
-    private static Account safeGetLinkedAccount(final String passport, final String subId) throws RemoteException {
-        final Person person = bank.getRemotePerson(passport);
-        assertNotNull(person);
-        final Account account = person.getLinkedAccount(subId);
-        assertNotNull(account);
-        return account;
-    }
-
     static void multiThreadPersonQueries(final int countOfThreads, final int requestsPerItem, final int countOfPersons,
                                          final int countOfAccounts) throws InterruptedException, RemoteException {
-        final List<List<Integer>> deltas = IntStream.range(0, countOfPersons).boxed()
-                .map(i -> IntStream.range(i * countOfAccounts + 1, (i + 1) * countOfAccounts + 1).boxed()
-                        .collect(Collectors.toCollection(ArrayList::new)))
-                .collect(Collectors.toCollection(ArrayList::new));
-        final List<String> passports = generateTestIds(countOfPersons);
-        final List<String> subIds = generateTestIds(countOfAccounts);
-        safeCreateMultiplePersonsWithMultipleAccounts(passports, subIds);
+        final MultiThreadPersonData data = new MultiThreadPersonData(countOfPersons, countOfAccounts);
+        safeCreateMultiplePersonsWithMultipleAccounts(data.passports, data.subIds);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
         final RemoteException exception = new RemoteException();
@@ -224,8 +211,8 @@ public abstract class RuntimeTests extends CommonTests {
         IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
                 .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
                     try {
-                        final Account account = safeGetLinkedAccount(passports.get(i), subIds.get(j));
-                        account.addAmount(deltas.get(i).get(j));
+                        final Account account = safeGetLinkedAccount(data.passports.get(i), data.subIds.get(j));
+                        account.addAmount(data.deltas.get(i).get(j));
                     } catch (final RemoteException e) {
                         exception.addSuppressed(e);
                     }
@@ -235,15 +222,7 @@ public abstract class RuntimeTests extends CommonTests {
 
         checkException(exception);
 
-        IntStream.range(0, countOfPersons).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> {
-            try {
-                final Account account = safeGetLinkedAccount(passports.get(i), subIds.get(j));
-                assertEquals(deltas.get(i).get(j) * requestsPerItem, account.getAmount());
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-        }));
-
-        checkException(exception);
+        validatePersonAccountAmounts(countOfPersons, countOfAccounts, data.passports, data.subIds,
+                (i, j) -> data.deltas.get(i).get(j) * requestsPerItem);
     }
 }

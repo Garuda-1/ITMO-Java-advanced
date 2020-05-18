@@ -146,7 +146,7 @@ class DemosTests extends CommonTests {
                         exception.addSuppressed(e);
                     }
                 })));
-        pool.awaitTermination(5 * countOfAccounts * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
+        pool.awaitTermination(countOfAccounts * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
 
         checkException(exception);
 
@@ -156,7 +156,35 @@ class DemosTests extends CommonTests {
 
     @Test
     @DisplayName("Multi thread requests (Person demo)")
-    void testMultiThreadPersonDemo() {
+    void testMultiThreadPersonDemo() throws InterruptedException, BankDemoException, RemoteException {
+        Server.main();
+        final int countOfPersons = 10;
+        final int countOfAccounts = 5;
+        final int requestsPerItem = 10;
+        final int countOfThreads = 15;
 
+        final MultiThreadPersonData data = new MultiThreadPersonData(countOfPersons, countOfAccounts);
+
+        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
+        final BankDemoException exception = new BankDemoException();
+
+        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
+                .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
+                    try {
+                        final String[] args = {"Tyler", "Wellick", data.passports.get(i), data.subIds.get(j),
+                                Integer.toString(data.deltas.get(i).get(j))};
+                        ClientPersonDemo.main(args);
+                    } catch (final BankDemoException e) {
+                        exception.addSuppressed(e);
+                    }
+                }))));
+        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons,
+                TimeUnit.MILLISECONDS);
+
+        checkException(exception);
+
+        bank = contactBank();
+        validatePersonAccountAmounts(countOfPersons, countOfAccounts, data.passports, data.subIds,
+                (i, j) -> data.deltas.get(i).get(j) * requestsPerItem);
     }
 }

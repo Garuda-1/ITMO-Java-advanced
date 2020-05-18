@@ -3,10 +3,8 @@ package ru.ifmo.rain.dolzhanskii.bank.demos;
 import ru.ifmo.rain.dolzhanskii.bank.source.Account;
 import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.source.Person;
-import ru.ifmo.rain.dolzhanskii.bank.test.RuntimeTests;
 
 import java.rmi.RemoteException;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
 
