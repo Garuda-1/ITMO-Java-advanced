@@ -7,4 +7,8 @@ class LocalAccount extends AbstractAccount implements Serializable {
     LocalAccount(Account remoteAccount) throws RemoteException {
         super(remoteAccount.getId(), remoteAccount.getAmount());
     }
+
+    LocalAccount(String id) {
+        super(id);
+    }
 }

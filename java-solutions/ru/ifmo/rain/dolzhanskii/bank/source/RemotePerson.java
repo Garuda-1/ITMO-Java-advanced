@@ -23,13 +23,23 @@ public class RemotePerson extends AbstractPerson {
     @Override
     public Account createLinkedAccount(final String subId) throws RemoteException {
         final String id = getAccountId(subId);
-        final Account account = bank.createAccount(id);
-        System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +
-                " (id = " + id + ", remote)");
-        if (linkedAccounts.putIfAbsent(id, account) == null) {
-            return account;
-        } else {
-            return getLinkedAccount(subId);
+        final RemoteException exception = new RemoteException();
+
+        final Account account = linkedAccounts.computeIfAbsent(id, accountId -> {
+            try {
+                System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +
+                        " (id = " + id + ", remote)");
+                return bank.createAccount(accountId);
+            } catch (final RemoteException e) {
+                exception.addSuppressed(e);
+            }
+            return null;
+        });
+
+        if (account == null) {
+            throw exception;
         }
+
+        return account;
     }
 }

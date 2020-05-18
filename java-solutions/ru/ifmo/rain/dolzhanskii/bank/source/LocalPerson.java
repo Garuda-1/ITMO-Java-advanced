@@ -2,7 +2,6 @@ package ru.ifmo.rain.dolzhanskii.bank.source;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalPerson extends AbstractPerson implements Serializable {
@@ -33,13 +32,8 @@ public class LocalPerson extends AbstractPerson implements Serializable {
     @Override
     public synchronized Account createLinkedAccount(final String subId) {
         final String id = getAccountId(subId);
-        final Account account = new RemoteAccount(id);
         System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +
                 " (id = " + id + ", local)");
-        if (linkedAccounts.putIfAbsent(id, account) == null) {
-            return account;
-        } else {
-            return getLinkedAccount(subId);
-        }
+        return linkedAccounts.computeIfAbsent(id, LocalAccount::new);
     }
 }
