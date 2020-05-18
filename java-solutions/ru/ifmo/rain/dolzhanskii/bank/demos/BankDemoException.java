@@ -8,4 +8,8 @@ public class BankDemoException extends Exception {
     BankDemoException(String message) {
         super(message);
     }
+
+    public BankDemoException() {
+        super();
+    }
 }

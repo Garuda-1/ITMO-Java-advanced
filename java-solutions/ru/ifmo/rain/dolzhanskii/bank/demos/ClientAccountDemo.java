@@ -5,6 +5,7 @@ import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.test.RuntimeTests;
 
 import java.rmi.RemoteException;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
@@ -29,7 +30,7 @@ public class ClientAccountDemo {
             System.out.println("Money: " + account.getAmount());
             System.out.println("Adding money");
 
-            RuntimeTests.safeIncreaseAmount(account, new ReentrantLock(), 100);
+            account.addAmount(100);
 
             System.out.println("Money: " + account.getAmount());
         } catch (final RemoteException e) {

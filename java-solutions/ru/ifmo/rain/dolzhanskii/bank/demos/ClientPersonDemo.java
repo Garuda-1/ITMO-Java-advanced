@@ -68,7 +68,7 @@ public class ClientPersonDemo {
             System.out.println("Account info: id = " + account.getId() + ", amount = " + account.getAmount());
             System.out.println("Adding " + amount);
 
-            RuntimeTests.safeIncreaseAmount(account, new ReentrantLock(), amount);
+            account.addAmount(amount);
 
             System.out.println("Updated account info: id = " + account.getId() + ", amount = " + account.getAmount());
         } catch (final RemoteException e) {

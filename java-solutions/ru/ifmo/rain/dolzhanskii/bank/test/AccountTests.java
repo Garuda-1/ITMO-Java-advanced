@@ -52,6 +52,18 @@ class AccountTests extends RuntimeTests {
     }
 
     @Test
+    @DisplayName("Amount add")
+    void testAddAmount() throws RemoteException {
+        final int amount = 100;
+
+        final Account account = safeCreateRemoteAccount(TEST_ACCOUNT_ID);
+        account.setAmount(amount);
+        assertEquals(amount, account.getAmount());
+        account.addAmount(amount);
+        assertEquals(2 * amount, account.getAmount());
+    }
+
+    @Test
     @DisplayName("Remote account sync")
     void testRemoteAccountSync() throws RemoteException {
         final int amount1 = 100;

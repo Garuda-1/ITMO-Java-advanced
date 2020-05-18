@@ -18,4 +18,6 @@ public interface Person extends Remote {
 
     /** Gets linked account with {@code id = passport:subId} */
     Account getLinkedAccount(String subId) throws RemoteException;
+
+
 }

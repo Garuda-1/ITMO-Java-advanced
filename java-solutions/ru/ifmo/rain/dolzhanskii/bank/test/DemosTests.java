@@ -9,7 +9,6 @@ import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.demos.ClientPersonDemo;
 import ru.ifmo.rain.dolzhanskii.bank.demos.Server;
 import ru.ifmo.rain.dolzhanskii.bank.source.Account;
-import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.source.Person;
 import ru.ifmo.rain.dolzhanskii.bank.source.RemoteCredentials;
 
@@ -18,6 +17,11 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
@@ -93,7 +97,7 @@ class DemosTests extends CommonTests {
             ClientAccountDemo.main(args);
         }
 
-        final Bank bank = contactBank();
+        bank = contactBank();
         final Account account = bank.getRemoteAccount(args[0]);
         assertNotNull(account);
         assertEquals(countOfQueries * 100, account.getAmount());
@@ -111,12 +115,48 @@ class DemosTests extends CommonTests {
             ClientPersonDemo.main(args);
         }
 
-        final Bank bank = contactBank();
+        bank = contactBank();
         final Person person = bank.getRemotePerson(args[2]);
         assertNotNull(person);
 
         final Account account = person.getLinkedAccount(args[3]);
         assertNotNull(account);
         assertEquals(countOfQueries * deltaAmount, account.getAmount());
+    }
+
+    @Test
+    @DisplayName("Multi thread requests (Account demo)")
+    void testMultiThreadAccountDemo() throws BankDemoException, RemoteException, InterruptedException {
+        Server.main();
+        final int countOfAccounts = 10;
+        final int requestsPerItem = 10;
+        final int countOfThreads = 10;
+
+        final List<String> ids = generateTestIds(countOfAccounts);
+
+        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
+        final BankDemoException exception = new BankDemoException();
+
+        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
+                .forEach(i -> pool.submit(() -> {
+                    try {
+                        final String[] args = {ids.get(i)};
+                        ClientAccountDemo.main(args);
+                    } catch (final BankDemoException e) {
+                        exception.addSuppressed(e);
+                    }
+                })));
+        pool.awaitTermination(5 * countOfAccounts * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
+
+        checkException(exception);
+
+        bank = contactBank();
+        validateAccountAmounts(countOfAccounts, ids, i -> 100 * requestsPerItem);
+    }
+
+    @Test
+    @DisplayName("Multi thread requests (Person demo)")
+    void testMultiThreadPersonDemo() {
+
     }
 }

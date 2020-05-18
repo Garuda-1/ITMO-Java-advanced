@@ -15,13 +15,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public abstract class RuntimeTests extends CommonTests {
-    protected static Bank bank;
 
     static final String TEST_FIRST_NAME = "John";
     static final String TEST_LAST_NAME = "Smith";
@@ -47,24 +44,8 @@ public abstract class RuntimeTests extends CommonTests {
         UnicastRemoteObject.unexportObject(bank, false);
     }
 
-    private static void checkException(final RemoteException exception) throws RemoteException {
-        if (exception.getSuppressed().length != 0) {
-            throw exception;
-        }
-    }
-
-    private static List<String> generateTestIds(final int count) {
-        return IntStream.range(0, count).mapToObj(i -> "test" + i).collect(Collectors.toCollection(ArrayList::new));
-    }
-
     static Account safeCreateRemoteAccount(final String id) throws RemoteException {
         final Account account = bank.createAccount(id);
-        assertNotNull(account);
-        return account;
-    }
-
-    static Account safeGetRemoteAccount(final String id) throws RemoteException {
-        final Account account = bank.getRemoteAccount(id);
         assertNotNull(account);
         return account;
     }
@@ -108,12 +89,6 @@ public abstract class RuntimeTests extends CommonTests {
         assertEquals(3 * TEST_AMOUNT_DELTA, localAccount2.getAmount());
     }
 
-    public static void safeIncreaseAmount(final Account account, final Lock lock, final int amountDelta) throws RemoteException {
-        lock.lock();
-        account.setAmount(account.getAmount() + amountDelta);
-        lock.unlock();
-    }
-
     static void multiThreadAccountQueries(final int countOfThreads, final int requestsPerItem,
                                           final int countOfAccounts) throws InterruptedException, RemoteException {
         final List<Integer> deltas = IntStream.range(0, countOfAccounts).boxed()
@@ -122,14 +97,13 @@ public abstract class RuntimeTests extends CommonTests {
         safeCreateMultipleAccounts(ids);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-        final Lock lock = new ReentrantLock();
         final RemoteException exception = new RemoteException();
 
         IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
                 .forEach(i -> pool.submit(() -> {
                     try {
                         final Account account = safeGetRemoteAccount(ids.get(i));
-                        safeIncreaseAmount(account, lock, deltas.get(i));
+                        account.addAmount(deltas.get(i));
                     } catch (final RemoteException e) {
                         exception.addSuppressed(e);
                     }
@@ -138,16 +112,7 @@ public abstract class RuntimeTests extends CommonTests {
 
         checkException(exception);
 
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = safeGetRemoteAccount(ids.get(i));
-                assertEquals(deltas.get(i) * requestsPerItem, account.getAmount());
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-        });
-
-        checkException(exception);
+        validateAccountAmounts(countOfAccounts, ids, i -> deltas.get(i) * requestsPerItem);
     }
 
     static Person safeCreatePerson() throws RemoteException {
@@ -254,14 +219,13 @@ public abstract class RuntimeTests extends CommonTests {
         safeCreateMultiplePersonsWithMultipleAccounts(passports, subIds);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-        final Lock lock = new ReentrantLock();
         final RemoteException exception = new RemoteException();
 
         IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
                 .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
                     try {
                         final Account account = safeGetLinkedAccount(passports.get(i), subIds.get(j));
-                        safeIncreaseAmount(account, lock, deltas.get(i).get(j));
+                        account.addAmount(deltas.get(i).get(j));
                     } catch (final RemoteException e) {
                         exception.addSuppressed(e);
                     }

@@ -1,5 +1,7 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
+import java.rmi.RemoteException;
+
 public abstract class AbstractAccount implements Account {
     private final String id;
     private int amount;
@@ -28,5 +30,11 @@ public abstract class AbstractAccount implements Account {
     public synchronized void setAmount(final int amount) {
         System.out.println("Setting amount of money for account " + id);
         this.amount = amount;
+    }
+
+    @Override
+    public synchronized void addAmount(int delta) {
+        System.out.println("Adding amount of money for account " + id);
+        this.amount += delta;
     }
 }
