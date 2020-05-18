@@ -178,7 +178,7 @@ class DemosTests extends CommonTests {
                         exception.addSuppressed(e);
                     }
                 }))));
-        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons,
+        pool.awaitTermination(requestsPerItem * countOfAccounts * countOfPersons,
                 TimeUnit.MILLISECONDS);
 
         checkException(exception);
