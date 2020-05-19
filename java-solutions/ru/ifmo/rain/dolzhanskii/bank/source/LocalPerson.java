@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
+
 class LocalPerson extends AbstractPerson implements Serializable {
     LocalPerson(final RemotePerson remotePerson) throws RemoteException {
         super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(),
@@ -23,9 +25,8 @@ class LocalPerson extends AbstractPerson implements Serializable {
             }
         });
 
-        if (exception.getSuppressed().length != 0) {
-            throw exception;
-        }
+        checkException(exception);
+
         return linkedAccounts;
     }
 

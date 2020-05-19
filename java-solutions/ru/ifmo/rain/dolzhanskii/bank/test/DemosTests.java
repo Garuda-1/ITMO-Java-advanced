@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
+import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
 
 @DisplayName("Demo applications tests")
 class DemosTests extends CommonTests {

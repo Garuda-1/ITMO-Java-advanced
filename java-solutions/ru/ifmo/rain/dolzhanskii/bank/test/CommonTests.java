@@ -16,6 +16,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
+
 abstract class CommonTests extends Assert {
     protected static Bank bank;
 
@@ -26,12 +28,6 @@ abstract class CommonTests extends Assert {
             LocateRegistry.createRegistry(RemoteCredentials.getBankPort());
         } catch (final ExportException e) {
             // Ignored
-        }
-    }
-
-    static <E extends Exception> void checkException(final E exception) throws E {
-        if (exception.getSuppressed().length != 0) {
-            throw exception;
         }
     }
 
