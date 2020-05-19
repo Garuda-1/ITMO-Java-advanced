@@ -81,8 +81,7 @@ public class HelloUDPNonblockingClient implements HelloClient {
                 channel.send(buffer, hostSocketAddress);
                 buffer.flip();
 
-                key.interestOpsOr(SelectionKey.OP_READ);
-                key.interestOpsAnd(~SelectionKey.OP_WRITE);
+                key.interestOps(SelectionKey.OP_READ);
             } catch (final ClosedChannelException e) {
                 logError("Channel is already closed", e);
             }
@@ -109,8 +108,7 @@ public class HelloUDPNonblockingClient implements HelloClient {
             logError("IO exception occurred during read handling", e);
         }
         if (context.requestId != requests) {
-            key.interestOpsAnd(~SelectionKey.OP_READ);
-            key.interestOpsOr(SelectionKey.OP_WRITE);
+            key.interestOps(SelectionKey.OP_WRITE);
         } else {
             try {
                 key.channel().close();

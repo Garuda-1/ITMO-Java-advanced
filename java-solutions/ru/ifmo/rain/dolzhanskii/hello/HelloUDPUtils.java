@@ -110,7 +110,6 @@ class HelloUDPUtils {
         channel.configureBlocking(false);
         channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
         if (server) {
-            channel.bind(address);
         } else {
             channel.connect(address);
         }

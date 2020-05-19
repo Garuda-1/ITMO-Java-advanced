@@ -34,6 +34,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
             selector = Selector.open();
 
             channel = configureChannel(new InetSocketAddress(port), true);
+            channel.bind(new InetSocketAddress(port));
             rxBufferSize = channel.socket().getReceiveBufferSize();
             channel.register(selector, SelectionKey.OP_READ, new Context(threads));
 
@@ -41,7 +42,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
             responders = Executors.newFixedThreadPool(threads);
 
             listener.submit(this::listen);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             logError("Failed to init UDP connection", e);
         }
     }
@@ -90,7 +91,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
         }
     }
 
-    private void handleRead(SelectionKey key) {
+    private void handleRead(final SelectionKey key) {
         final Context context = (Context) key.attachment();
         final ByteBuffer buffer = context.getBuffer();
 
@@ -102,7 +103,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
         }
     }
 
-    private void handleWrite(SelectionKey key) {
+    private void handleWrite(final SelectionKey key) {
         final Context context = (Context) key.attachment();
         final Context.Parcel parcel = context.getParcel();
         try {
@@ -150,7 +151,7 @@ public class HelloUDPNonblockingServer implements HelloServer {
         }
 
         synchronized void addParcel(final ByteBuffer buffer, final SocketAddress destination) {
-            if (parcels.size() == 0) {
+            if (parcels.isEmpty()) {
                 channel.keyFor(selector).interestOpsOr(SelectionKey.OP_WRITE);
                 selector.wakeup();
             }
@@ -158,18 +159,19 @@ public class HelloUDPNonblockingServer implements HelloServer {
         }
 
         synchronized Parcel getParcel() {
-            if (parcels.size() == 1) {
+            final Parcel value = parcels.remove(parcels.size() - 1);
+            if (parcels.isEmpty()) {
                 channel.keyFor(selector).interestOpsAnd(~SelectionKey.OP_WRITE);
                 selector.wakeup();
             }
-            return parcels.remove(parcels.size() - 1);
+            return value;
         }
 
         class Parcel {
             ByteBuffer buffer;
             SocketAddress destination;
 
-            Parcel(ByteBuffer buffer, SocketAddress destination) {
+            Parcel(final ByteBuffer buffer, final SocketAddress destination) {
                 this.buffer = buffer;
                 this.destination = destination;
             }
