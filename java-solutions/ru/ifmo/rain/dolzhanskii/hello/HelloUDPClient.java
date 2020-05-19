@@ -39,7 +39,7 @@ public class HelloUDPClient implements HelloClient {
             socket.setSoTimeout(SOCKET_TIMEOUT_MS);
 
             final int bufferSizeRx = socket.getReceiveBufferSize();
-            final DatagramPacket packet = HelloUDPUtils.initPacket(bufferSizeRx);
+            final DatagramPacket packet = initPacket(bufferSizeRx);
             final byte[] bufferRx = packet.getData();
 
             for (int requestId = 0; requestId < requests; requestId++) {
@@ -51,19 +51,19 @@ public class HelloUDPClient implements HelloClient {
                     logInfo(threadId, String.format("Sending message (attempt %d): '%s'", ++attempt, request));
                     final String response;
 
-                    HelloUDPUtils.stringToPacket(packet, request, hostSocket);
-                    if (HelloUDPUtils.send(packet, socket)) {
+                    stringToPacket(packet, request, hostSocket);
+                    if (send(packet, socket)) {
                         continue;
                     }
 
                     packet.setData(bufferRx, 0, bufferSizeRx);
-                    if (HelloUDPUtils.receive(packet, socket)) {
+                    if (receive(packet, socket)) {
                         continue;
                     }
                     response = new String(packet.getData(), packet.getOffset(), packet.getLength(),
                             StandardCharsets.UTF_8);
 
-                    if (HelloUDPUtils.validate(response, threadId, requestId)) {
+                    if (validate(response, threadId, requestId)) {
                         break;
                     }
                 }
