@@ -1,9 +1,11 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 public class RemoteBank implements Bank {
     private final int port;
@@ -14,26 +16,28 @@ public class RemoteBank implements Bank {
         this.port = port;
     }
 
-    public Account createAccount(final String id) throws RemoteException {
-        final RemoteException exception = new RemoteException("Failed to export account");
+    private <T extends Remote> T addInstanceById(final String id, final Function<String, T> factory,
+                                               final ConcurrentMap<String, T> map) throws RemoteException {
+        final RemoteException exception = new RemoteException("Failed to export instance");
 
-        final Account account = accounts.computeIfAbsent(id, accountId -> {
+        final T ret = map.computeIfAbsent(id, instanceId -> {
             try {
-                System.out.println("Creating account " + id);
-                final Account tmpAccount = new RemoteAccount(accountId);
-                UnicastRemoteObject.exportObject(tmpAccount, port);
-                return tmpAccount;
-            } catch (RemoteException e) {
+                System.out.println("Creating instance " + id);
+                final T tmpInstance = factory.apply(instanceId);
+                UnicastRemoteObject.exportObject(tmpInstance, port);
+                return tmpInstance;
+            } catch (final RemoteException e) {
                 exception.addSuppressed(e);
             }
             return null;
         });
 
-        if (account == null) {
-            throw exception;
-        }
+        BankUtils.checkException(exception);
+        return ret;
+    }
 
-        return account;
+    public Account createAccount(final String id) throws RemoteException {
+        return addInstanceById(id, RemoteAccount::new, accounts);
     }
 
     public Account getRemoteAccount(final String id) {
@@ -53,25 +57,7 @@ public class RemoteBank implements Bank {
 
     public Person createPerson(final String firstName, final String lastName, final String passport)
             throws RemoteException {
-        final RemoteException exception = new RemoteException("Failed to export person");
-
-        final Person person = persons.computeIfAbsent(passport, accountId -> {
-            try {
-                System.out.println("Creating person " + lastName + " " + firstName + " " + passport);
-                final Person tmpPerson = new RemotePerson(firstName, lastName, passport);
-                UnicastRemoteObject.exportObject(tmpPerson, port);
-                return tmpPerson;
-            } catch (RemoteException e) {
-                exception.addSuppressed(e);
-            }
-            return null;
-        });
-
-        if (person == null) {
-            throw exception;
-        }
-
-        return person;
+        return addInstanceById(passport, p -> new RemotePerson(firstName, lastName, p, this), persons);
     }
 
     public Person getLocalPerson(final String passport) throws RemoteException {

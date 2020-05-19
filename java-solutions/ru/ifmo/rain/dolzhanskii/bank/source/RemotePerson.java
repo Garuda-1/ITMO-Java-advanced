@@ -1,23 +1,14 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
 class RemotePerson extends AbstractPerson {
     private final Bank bank;
 
-    RemotePerson(final String firstName, final String lastName, final String passport) throws RemoteException {
+    RemotePerson(final String firstName, final String lastName, final String passport, final Bank bank) {
         super(firstName, lastName, passport, new ConcurrentHashMap<>());
-        try {
-            bank = (Bank) Naming.lookup(RemoteCredentials.getBankUrl());
-        } catch (final NotBoundException e) {
-            throw new RemoteException("Bank not found", e);
-        } catch (final MalformedURLException e) {
-            throw new RemoteException("Malformed URL", e);
-        }
+        this.bank = bank;
     }
 
     @Override

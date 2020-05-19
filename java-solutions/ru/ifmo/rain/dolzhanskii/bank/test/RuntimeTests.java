@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 
 import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
 
-public abstract class RuntimeTests extends CommonTests {
+abstract class RuntimeTests extends CommonTests {
 
     static final String TEST_FIRST_NAME = "John";
     static final String TEST_LAST_NAME = "Smith";
