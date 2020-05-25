@@ -6,6 +6,7 @@ import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.source.Person;
 import ru.ifmo.rain.dolzhanskii.bank.source.RemoteCredentials;
 
+import java.io.UncheckedIOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.ExportException;
@@ -15,8 +16,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
 
 abstract class CommonTests extends Assert {
     protected static Bank bank;
@@ -51,19 +50,19 @@ abstract class CommonTests extends Assert {
 
     static void validateAccountAmounts(final int countOfAccounts, final List<String> ids,
                                        final Function<Integer, Integer> expected) throws RemoteException {
-        final RemoteException exception = new RemoteException();
-
-        IntStream.range(0, countOfAccounts).forEach(i -> {
-            try {
-                final Account account = safeGetRemoteAccount(ids.get(i));
-                System.out.println("Checking " + ids.get(i));
-                assertEquals((int) expected.apply(i), account.getAmount());
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-        });
-
-        checkException(exception);
+        try {
+            IntStream.range(0, countOfAccounts).forEach(i -> {
+                try {
+                    final Account account = safeGetRemoteAccount(ids.get(i));
+                    System.out.println("Checking " + ids.get(i));
+                    assertEquals((int) expected.apply(i), account.getAmount());
+                } catch (final RemoteException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Remote exception occurred", e.getCause());
+        }
     }
 
     static class MultiThreadPersonData {
@@ -86,17 +85,17 @@ abstract class CommonTests extends Assert {
                                              final List<String> subIds,
                                              final BiFunction<Integer, Integer, Integer> expected)
             throws RemoteException {
-        final RemoteException exception = new RemoteException();
-
-        IntStream.range(0, countOfPersons).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> {
-            try {
-                final Account account = safeGetLinkedAccount(passports.get(i), subIds.get(j));
-                assertEquals((int) expected.apply(i, j), account.getAmount());
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-        }));
-
-        checkException(exception);
+        try {
+            IntStream.range(0, countOfPersons).forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> {
+                try {
+                    final Account account = safeGetLinkedAccount(passports.get(i), subIds.get(j));
+                    assertEquals((int) expected.apply(i, j), account.getAmount());
+                } catch (final RemoteException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }));
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Remote exception occurred", e.getCause());
+        }
     }
 }

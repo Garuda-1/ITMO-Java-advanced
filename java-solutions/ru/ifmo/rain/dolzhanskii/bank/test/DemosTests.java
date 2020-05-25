@@ -12,6 +12,8 @@ import ru.ifmo.rain.dolzhanskii.bank.source.Account;
 import ru.ifmo.rain.dolzhanskii.bank.source.Person;
 import ru.ifmo.rain.dolzhanskii.bank.source.RemoteCredentials;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -25,7 +27,6 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
-import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
 
 @DisplayName("Demo applications tests")
 class DemosTests extends CommonTests {
@@ -136,20 +137,22 @@ class DemosTests extends CommonTests {
         final List<String> ids = generateTestIds(countOfAccounts);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-        final BankDemoException exception = new BankDemoException();
 
-        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
-                .forEach(i -> pool.submit(() -> {
-                    try {
-                        final String[] args = {ids.get(i)};
-                        ClientAccountDemo.main(args);
-                    } catch (final BankDemoException e) {
-                        exception.addSuppressed(e);
-                    }
-                })));
+        try {
+            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
+                    .forEach(i -> pool.submit(() -> {
+                        try {
+                            final String[] args = {ids.get(i)};
+                            ClientAccountDemo.main(args);
+                        } catch (final BankDemoException e) {
+                            throw new UncheckedIOException(new IOException(e));
+                        }
+                    })));
+        } catch (final UncheckedIOException e) {
+            throw new BankDemoException("Bank demo error occurred", e.getCause());
+        }
         pool.awaitTermination(countOfAccounts * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
 
-        checkException(exception);
 
         bank = contactBank();
         validateAccountAmounts(countOfAccounts, ids, i -> 100 * requestsPerItem);
@@ -167,22 +170,23 @@ class DemosTests extends CommonTests {
         final MultiThreadPersonData data = new MultiThreadPersonData(countOfPersons, countOfAccounts);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-        final BankDemoException exception = new BankDemoException();
 
-        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
-                .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
-                    try {
-                        final String[] args = {"Tyler", "Wellick", data.passports.get(i), data.subIds.get(j),
-                                Integer.toString(data.deltas.get(i).get(j))};
-                        ClientPersonDemo.main(args);
-                    } catch (final BankDemoException e) {
-                        exception.addSuppressed(e);
-                    }
-                }))));
+        try {
+            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
+                    .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
+                        try {
+                            final String[] args = {"Tyler", "Wellick", data.passports.get(i), data.subIds.get(j),
+                                    Integer.toString(data.deltas.get(i).get(j))};
+                            ClientPersonDemo.main(args);
+                        } catch (final BankDemoException e) {
+                            throw new UncheckedIOException(new IOException(e));
+                        }
+                    }))));
+        } catch (final UncheckedIOException e) {
+            throw new BankDemoException("Bank demo error occurred", e.getCause());
+        }
         pool.awaitTermination(requestsPerItem * countOfAccounts * countOfPersons,
                 TimeUnit.MILLISECONDS);
-
-        checkException(exception);
 
         bank = contactBank();
         validatePersonAccountAmounts(countOfPersons, countOfAccounts, data.passports, data.subIds,

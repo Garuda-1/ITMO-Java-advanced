@@ -1,5 +1,6 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
+import java.io.UncheckedIOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -18,22 +19,20 @@ public class RemoteBank implements Bank {
 
     private <T extends Remote> T addInstanceById(final String id, final Function<String, T> factory,
                                                final ConcurrentMap<String, T> map) throws RemoteException {
-        final RemoteException exception = new RemoteException("Failed to export instance");
-
-        final T ret = map.computeIfAbsent(id, instanceId -> {
-            try {
-                System.out.println("Creating instance " + id);
-                final T tmpInstance = factory.apply(instanceId);
-                UnicastRemoteObject.exportObject(tmpInstance, port);
-                return tmpInstance;
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-            return null;
-        });
-
-        BankUtils.checkException(exception);
-        return ret;
+        try {
+            return map.computeIfAbsent(id, instanceId -> {
+                try {
+                    System.out.println("Creating instance " + id);
+                    final T tmpInstance = factory.apply(instanceId);
+                    UnicastRemoteObject.exportObject(tmpInstance, port);
+                    return tmpInstance;
+                } catch (final RemoteException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Failed to export instance", e);
+        }
     }
 
     public Account createAccount(final String id) throws RemoteException {
@@ -51,7 +50,7 @@ public class RemoteBank implements Bank {
         if (account == null) {
             return null;
         } else {
-            return new LocalAccount(account);
+            return new LocalAccount(account.getId(), account.getAmount());
         }
     }
 
@@ -66,7 +65,7 @@ public class RemoteBank implements Bank {
         if (person == null) {
             return null;
         } else {
-            return new LocalPerson((RemotePerson) person);
+            return new LocalPerson((RemotePerson) person, LocalPerson.exportAccounts((RemotePerson) person));
         }
     }
 

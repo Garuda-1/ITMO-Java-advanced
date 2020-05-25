@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import ru.ifmo.rain.dolzhanskii.bank.source.*;
 
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NoSuchObjectException;
@@ -17,8 +18,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static ru.ifmo.rain.dolzhanskii.bank.source.BankUtils.checkException;
 
 abstract class RuntimeTests extends CommonTests {
 
@@ -59,15 +58,17 @@ abstract class RuntimeTests extends CommonTests {
     }
 
     private static void safeCreateMultipleAccounts(final List<String> ids) throws RemoteException {
-        final RemoteException exception = new RemoteException();
-        ids.forEach(id -> {
-            try {
-                bank.createAccount(id);
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-        });
-        checkException(exception);
+        try {
+            ids.forEach(id -> {
+                try {
+                    bank.createAccount(id);
+                } catch (final RemoteException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Remote exception occurred", e);
+        }
     }
 
     static void validateLocalAndRemoteBehavior(final Account remoteAccount, final Account localAccount1,
@@ -99,20 +100,21 @@ abstract class RuntimeTests extends CommonTests {
         safeCreateMultipleAccounts(ids);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-        final RemoteException exception = new RemoteException();
 
-        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
-                .forEach(i -> pool.submit(() -> {
-                    try {
-                        final Account account = safeGetRemoteAccount(ids.get(i));
-                        account.addAmount(deltas.get(i));
-                    } catch (final RemoteException e) {
-                        exception.addSuppressed(e);
-                    }
-                })));
+        try {
+            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
+                    .forEach(i -> pool.submit(() -> {
+                        try {
+                            final Account account = safeGetRemoteAccount(ids.get(i));
+                            account.addAmount(deltas.get(i));
+                        } catch (final RemoteException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })));
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Remote exception occurred", e);
+        }
         pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
-
-        checkException(exception);
 
         validateAccountAmounts(countOfAccounts, ids, i -> deltas.get(i) * requestsPerItem);
     }
@@ -183,23 +185,25 @@ abstract class RuntimeTests extends CommonTests {
             throws RemoteException {
         final RemoteException exception = new RemoteException();
 
-        passports.forEach(passport -> {
-            try {
-                final Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
-                assertNotNull(person);
-                subIds.forEach(subId -> {
-                    try {
-                        assertNotNull(person.createLinkedAccount(subId));
-                    } catch (final RemoteException e) {
-                        exception.addSuppressed(e);
-                    }
-                });
-            } catch (final RemoteException e) {
-                exception.addSuppressed(e);
-            }
-        });
-
-        checkException(exception);
+        try {
+            passports.forEach(passport -> {
+                try {
+                    final Person person = bank.createPerson(TEST_FIRST_NAME, TEST_LAST_NAME, passport);
+                    assertNotNull(person);
+                    subIds.forEach(subId -> {
+                        try {
+                            assertNotNull(person.createLinkedAccount(subId));
+                        } catch (final RemoteException e) {
+                            exception.addSuppressed(e);
+                        }
+                    });
+                } catch (final RemoteException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Remote exception occurred", e.getCause());
+        }
     }
 
     static void multiThreadPersonQueries(final int countOfThreads, final int requestsPerItem, final int countOfPersons,
@@ -208,21 +212,22 @@ abstract class RuntimeTests extends CommonTests {
         safeCreateMultiplePersonsWithMultipleAccounts(data.passports, data.subIds);
 
         final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-        final RemoteException exception = new RemoteException();
 
-        IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
-                .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
-                    try {
-                        final Account account = safeGetLinkedAccount(data.passports.get(i), data.subIds.get(j));
-                        account.addAmount(data.deltas.get(i).get(j));
-                    } catch (final RemoteException e) {
-                        exception.addSuppressed(e);
-                    }
-                }))));
+        try {
+            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
+                    .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
+                        try {
+                            final Account account = safeGetLinkedAccount(data.passports.get(i), data.subIds.get(j));
+                            account.addAmount(data.deltas.get(i).get(j));
+                        } catch (final RemoteException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    }))));
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Remote exception occurred", e.getCause());
+        }
         pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons,
                 TimeUnit.MILLISECONDS);
-
-        checkException(exception);
 
         validatePersonAccountAmounts(countOfPersons, countOfAccounts, data.passports, data.subIds,
                 (i, j) -> data.deltas.get(i).get(j) * requestsPerItem);

@@ -4,11 +4,11 @@ import java.io.Serializable;
 import java.rmi.RemoteException;
 
 class LocalAccount extends AbstractAccount implements Serializable {
-    LocalAccount(Account remoteAccount) throws RemoteException {
-        super(remoteAccount.getId(), remoteAccount.getAmount());
+    LocalAccount(final String id, final int amount) {
+        super(id, amount);
     }
 
-    LocalAccount(String id) {
+    LocalAccount(final String id) {
         super(id);
     }
 }

@@ -1,7 +1,7 @@
 package ru.ifmo.rain.dolzhanskii.bank.demos;
 
 public class BankDemoException extends Exception {
-    BankDemoException(String message, Throwable cause) {
+    public BankDemoException(String message, Throwable cause) {
         super(message, cause);
     }
 
