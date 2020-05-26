@@ -24,6 +24,14 @@ javac -cp . -p . --module-path ${LIB_PATH} \
     --add-modules org.junit.platform.launcher \
     ${SRC_PATH}/*/*.java -d ${OUT_PATH}
 
+RET_CODE=${?}
+
+if [[ ${RET_CODE} != 0 ]]
+then
+    cd ${BASE_DIR}
+    exit ${RET_CODE}
+fi
+
 cd ${OUT_PATH}
 
 java -cp . -p . --module-path ${LIB_PATH} \
