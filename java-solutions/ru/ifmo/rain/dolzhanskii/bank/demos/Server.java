@@ -20,8 +20,10 @@ public class Server {
             Naming.rebind(RemoteCredentials.getBankUrl(), bank);
         } catch (final RemoteException e) {
             System.out.println("Cannot export object: " + e.getMessage());
+            return;
         } catch (final MalformedURLException e) {
             System.out.println("Malformed URL");
+            return;
         }
 
         System.out.println("Server started");

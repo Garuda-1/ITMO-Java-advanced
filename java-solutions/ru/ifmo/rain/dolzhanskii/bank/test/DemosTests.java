@@ -2,8 +2,8 @@ package ru.ifmo.rain.dolzhanskii.bank.test;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import ru.ifmo.rain.dolzhanskii.bank.demos.BankDemoException;
 import ru.ifmo.rain.dolzhanskii.bank.demos.ClientAccountDemo;
 import ru.ifmo.rain.dolzhanskii.bank.demos.ClientPersonDemo;
@@ -20,10 +20,6 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
@@ -136,23 +132,14 @@ class DemosTests extends CommonTests {
 
         final List<String> ids = generateTestIds(countOfAccounts);
 
-        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-
-        try {
-            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
-                    .forEach(i -> pool.submit(() -> {
-                        try {
-                            final String[] args = {ids.get(i)};
-                            ClientAccountDemo.main(args);
-                        } catch (final BankDemoException e) {
-                            throw new UncheckedIOException(new IOException(e));
-                        }
-                    })));
-        } catch (final UncheckedIOException e) {
-            throw new BankDemoException("Bank demo error occurred", e.getCause());
-        }
-        pool.awaitTermination(countOfAccounts * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
-
+        multiThreadBase(countOfThreads, requestsPerItem, 1, countOfAccounts, (i, j) -> {
+            try {
+                final String[] args = {ids.get(j)};
+                ClientAccountDemo.main(args);
+            } catch (final BankDemoException e) {
+                throw new UncheckedIOException(new IOException(e));
+            }
+        });
 
         bank = contactBank();
         validateAccountAmounts(countOfAccounts, ids, i -> 100 * requestsPerItem);
@@ -169,24 +156,15 @@ class DemosTests extends CommonTests {
 
         final MultiThreadPersonData data = new MultiThreadPersonData(countOfPersons, countOfAccounts);
 
-        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-
-        try {
-            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
-                    .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
-                        try {
-                            final String[] args = {"Tyler", "Wellick", data.passports.get(i), data.subIds.get(j),
-                                    Integer.toString(data.deltas.get(i).get(j))};
-                            ClientPersonDemo.main(args);
-                        } catch (final BankDemoException e) {
-                            throw new UncheckedIOException(new IOException(e));
-                        }
-                    }))));
-        } catch (final UncheckedIOException e) {
-            throw new BankDemoException("Bank demo error occurred", e.getCause());
-        }
-        pool.awaitTermination(requestsPerItem * countOfAccounts * countOfPersons,
-                TimeUnit.MILLISECONDS);
+        multiThreadBase(countOfThreads, requestsPerItem, countOfPersons, countOfAccounts, (i, j) -> {
+            try {
+                final String[] args = {"Tyler", "Wellick", data.passports.get(i), data.subIds.get(j),
+                        Integer.toString(data.deltas.get(i).get(j))};
+                ClientPersonDemo.main(args);
+            } catch (final BankDemoException e) {
+                throw new UncheckedIOException(new IOException(e));
+            }
+        });
 
         bank = contactBank();
         validatePersonAccountAmounts(countOfPersons, countOfAccounts, data.passports, data.subIds,

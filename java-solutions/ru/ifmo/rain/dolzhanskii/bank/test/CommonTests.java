@@ -12,6 +12,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.ExportException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -78,6 +82,21 @@ abstract class CommonTests extends Assert {
             passports = generateTestIds(countOfPersons);
             subIds = generateTestIds(countOfAccounts);
         }
+    }
+
+    static void multiThreadBase(final int countOfThreads, final int requestsPerItem, final int countOfPersons,
+                                final int countOfAccounts, final BiConsumer<Integer, Integer> jobs) throws RemoteException, InterruptedException {
+        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
+
+        try {
+            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
+                    .forEach(i -> IntStream.range(0, countOfAccounts)
+                            .forEach(j -> pool.submit(() -> jobs.accept(i, j)))));
+        } catch (final UncheckedIOException e) {
+            throw new RemoteException("Exception occurred", e.getCause());
+        }
+        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons,
+                TimeUnit.MILLISECONDS);
     }
 
     static void validatePersonAccountAmounts(final int countOfPersons, final int countOfAccounts,

@@ -3,7 +3,10 @@ package ru.ifmo.rain.dolzhanskii.bank.test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import ru.ifmo.rain.dolzhanskii.bank.source.*;
+import ru.ifmo.rain.dolzhanskii.bank.source.Account;
+import ru.ifmo.rain.dolzhanskii.bank.source.Person;
+import ru.ifmo.rain.dolzhanskii.bank.source.RemoteBank;
+import ru.ifmo.rain.dolzhanskii.bank.source.RemoteCredentials;
 
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -13,9 +16,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -99,22 +99,14 @@ abstract class RuntimeTests extends CommonTests {
         final List<String> ids = generateTestIds(countOfAccounts);
         safeCreateMultipleAccounts(ids);
 
-        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-
-        try {
-            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfAccounts)
-                    .forEach(i -> pool.submit(() -> {
-                        try {
-                            final Account account = safeGetRemoteAccount(ids.get(i));
-                            account.addAmount(deltas.get(i));
-                        } catch (final RemoteException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    })));
-        } catch (final UncheckedIOException e) {
-            throw new RemoteException("Remote exception occurred", e);
-        }
-        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts, TimeUnit.MILLISECONDS);
+        multiThreadBase(countOfThreads, requestsPerItem, 1, countOfAccounts, (i, j) -> {
+            try {
+                final Account account = safeGetRemoteAccount(ids.get(j));
+                account.addAmount(deltas.get(j));
+            } catch (final RemoteException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
 
         validateAccountAmounts(countOfAccounts, ids, i -> deltas.get(i) * requestsPerItem);
     }
@@ -211,23 +203,14 @@ abstract class RuntimeTests extends CommonTests {
         final MultiThreadPersonData data = new MultiThreadPersonData(countOfPersons, countOfAccounts);
         safeCreateMultiplePersonsWithMultipleAccounts(data.passports, data.subIds);
 
-        final ExecutorService pool = Executors.newFixedThreadPool(countOfThreads);
-
-        try {
-            IntStream.range(0, requestsPerItem).forEach(u -> IntStream.range(0, countOfPersons)
-                    .forEach(i -> IntStream.range(0, countOfAccounts).forEach(j -> pool.submit(() -> {
-                        try {
-                            final Account account = safeGetLinkedAccount(data.passports.get(i), data.subIds.get(j));
-                            account.addAmount(data.deltas.get(i).get(j));
-                        } catch (final RemoteException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    }))));
-        } catch (final UncheckedIOException e) {
-            throw new RemoteException("Remote exception occurred", e.getCause());
-        }
-        pool.awaitTermination(countOfThreads * requestsPerItem * countOfAccounts * countOfPersons,
-                TimeUnit.MILLISECONDS);
+        multiThreadBase(countOfThreads, requestsPerItem, countOfPersons, countOfAccounts, (i, j) -> {
+            try {
+                final Account account = safeGetLinkedAccount(data.passports.get(i), data.subIds.get(j));
+                account.addAmount(data.deltas.get(i).get(j));
+            } catch (final RemoteException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
 
         validatePersonAccountAmounts(countOfPersons, countOfAccounts, data.passports, data.subIds,
                 (i, j) -> data.deltas.get(i).get(j) * requestsPerItem);

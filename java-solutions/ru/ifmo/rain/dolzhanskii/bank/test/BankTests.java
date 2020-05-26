@@ -30,6 +30,6 @@ public class BankTests {
 
         summary.printTo(new PrintWriter(new OutputStreamWriter(System.out)));
 
-        System.exit(summary.getFailures().size() == 0 ? 0 : 1);
+        System.exit(summary.getFailures().size());
     }
 }
