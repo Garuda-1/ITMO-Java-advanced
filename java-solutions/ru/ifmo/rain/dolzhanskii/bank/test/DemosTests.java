@@ -61,7 +61,7 @@ class DemosTests extends CommonTests {
     @Test
     @DisplayName("No server started (Account demo)")
     void testNoServerAccount() {
-        Throwable throwable = assertThrows(BankDemoException.class, ClientAccountDemo::main);
+        BankDemoException throwable = assertThrows(BankDemoException.class, ClientAccountDemo::main);
         assertNotNull(throwable);
         assertEquals("Bank is not found", throwable.getMessage());
     }
