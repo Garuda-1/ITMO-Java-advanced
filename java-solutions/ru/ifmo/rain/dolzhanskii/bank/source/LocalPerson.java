@@ -1,8 +1,6 @@
 package ru.ifmo.rain.dolzhanskii.bank.source;
 
 import java.io.Serializable;
-import java.io.UncheckedIOException;
-import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -11,22 +9,12 @@ class LocalPerson extends AbstractPerson implements Serializable {
         super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(), map);
     }
 
-    static ConcurrentHashMap<String, Account> exportAccounts(final RemotePerson remotePerson)
-            throws RemoteException {
+    static ConcurrentMap<String, Account> exportAccounts(final RemotePerson remotePerson) {
         final ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>(remotePerson.linkedAccounts);
-
-        try {
-            remotePerson.linkedAccounts.forEach((key, account) -> {
-                try {
-                    linkedAccounts.put(key, new LocalAccount(account.getId(), account.getAmount()));
-                } catch (final RemoteException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-        } catch (final UncheckedIOException e) {
-            throw new RemoteException("Failed to export linked account", e.getCause());
-        }
-
+        remotePerson.linkedAccounts.forEach((key, account) -> {
+            linkedAccounts.put(key, new LocalAccount(((RemoteAccount) account).getId(),
+                    ((RemoteAccount) account).getAmount()));
+        });
         return linkedAccounts;
     }
 

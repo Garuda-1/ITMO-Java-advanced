@@ -59,7 +59,7 @@ public class RemoteBank implements Bank {
         return addInstanceById(passport, p -> new RemotePerson(firstName, lastName, p, this), persons);
     }
 
-    public Person getLocalPerson(final String passport) throws RemoteException {
+    public Person getLocalPerson(final String passport) {
         System.out.println("Retrieving local person by passport " + passport);
         Person person = persons.get(passport);
         if (person == null) {

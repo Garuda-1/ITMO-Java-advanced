@@ -1,7 +1,8 @@
 package ru.ifmo.rain.dolzhanskii.bank.test;
 
-import org.junit.jupiter.api.*;
-import ru.ifmo.rain.dolzhanskii.bank.source.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import ru.ifmo.rain.dolzhanskii.bank.source.Account;
 
 import java.rmi.RemoteException;
 

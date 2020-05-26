@@ -38,7 +38,7 @@ fi
 
 cd ${OUT_PATH}
 
-java -jar ${JUNIT_JAR_PATH} -cp ${OUT_PATH} --scan-class-path
+java -jar ${JUNIT_JAR_PATH} -cp ${OUT_PATH} --select-package "ru.ifmo.rain.dolzhanskii.bank.test"
 
 RET_CODE=${?}
 

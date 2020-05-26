@@ -21,7 +21,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.ifmo.rain.dolzhanskii.bank.demos.CommonUtils.contactBank;
 
 @DisplayName("Demo applications tests")
@@ -61,17 +60,13 @@ class DemosTests extends CommonTests {
     @Test
     @DisplayName("No server started (Account demo)")
     void testNoServerAccount() {
-        BankDemoException throwable = assertThrows(BankDemoException.class, ClientAccountDemo::main);
-        assertNotNull(throwable);
-        assertEquals("Bank is not found", throwable.getMessage());
+        validateException(BankDemoException.class, "Bank is not found", ClientAccountDemo::main);
     }
 
     @Test
     @DisplayName("No server started (Person demo)")
     void testNoServerPerson() {
-        Throwable throwable = assertThrows(BankDemoException.class, ClientPersonDemo::main);
-        assertNotNull(throwable);
-        assertEquals("Bank is not found", throwable.getMessage());
+        validateException(BankDemoException.class, "Bank is not found", ClientPersonDemo::main);
     }
 
     @Test
@@ -79,9 +74,8 @@ class DemosTests extends CommonTests {
     void testInvalidAmountDeltaArg() {
         Server.main();
         final String[] args = {"X", "X", "X", "X", "X"};
-        Throwable throwable = assertThrows(BankDemoException.class, () -> ClientPersonDemo.main(args));
-        assertNotNull(throwable);
-        assertEquals("Amount parameter is expected to be a number", throwable.getMessage());
+        validateException(BankDemoException.class, "Amount parameter is expected to be a number",
+                () -> ClientPersonDemo.main(args));
     }
 
     @Test

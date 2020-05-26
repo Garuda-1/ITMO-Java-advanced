@@ -1,6 +1,7 @@
 package ru.ifmo.rain.dolzhanskii.bank.test;
 
 import org.junit.Assert;
+import org.junit.jupiter.api.function.Executable;
 import ru.ifmo.rain.dolzhanskii.bank.source.Account;
 import ru.ifmo.rain.dolzhanskii.bank.source.Bank;
 import ru.ifmo.rain.dolzhanskii.bank.source.Person;
@@ -21,6 +22,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 abstract class CommonTests extends Assert {
     protected static Bank bank;
 
@@ -32,6 +35,12 @@ abstract class CommonTests extends Assert {
         } catch (final ExportException e) {
             // Ignored
         }
+    }
+
+    static <T extends Throwable> void validateException(final Class<T> exceptionClass, final String exceptionMessage,
+                                  final Executable executable) {
+        T exception = assertThrows(exceptionClass, executable);
+        assertEquals(exceptionMessage, exception.getMessage());
     }
 
     static List<String> generateTestIds(final int count) {
