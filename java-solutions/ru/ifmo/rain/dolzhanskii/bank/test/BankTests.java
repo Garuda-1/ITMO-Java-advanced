@@ -23,7 +23,6 @@ public class BankTests {
         Launcher launcher = LauncherFactory.create();
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
         launcher.registerTestExecutionListeners(listener);
-
         launcher.execute(request);
 
         TestExecutionSummary summary = listener.getSummary();
