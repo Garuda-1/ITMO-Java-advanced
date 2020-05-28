@@ -24,7 +24,6 @@ public class BankTests {
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
         launcher.registerTestExecutionListeners(listener);
         launcher.execute(request);
-
         TestExecutionSummary summary = listener.getSummary();
 
         summary.printTo(new PrintWriter(new OutputStreamWriter(System.out)));
