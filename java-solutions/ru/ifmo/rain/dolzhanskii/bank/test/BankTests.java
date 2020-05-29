@@ -25,6 +25,7 @@ public class BankTests {
         launcher.registerTestExecutionListeners(listener);
         launcher.execute(request);
         TestExecutionSummary summary = listener.getSummary();
+
         summary.printTo(new PrintWriter(new OutputStreamWriter(System.out)));
         System.exit(summary.getFailures().size());
     }
