@@ -90,6 +90,42 @@ public class TextStatistics {
                     .divide(BigInteger.valueOf(stats.countTotal)).longValue());
             return stats;
         }
+
+        public StatisticsType getType() {
+            return type;
+        }
+
+        public int getCountTotal() {
+            return countTotal;
+        }
+
+        public int getCountUnique() {
+            return countUnique;
+        }
+
+        public T getMinValue() {
+            return minValue;
+        }
+
+        public T getMaxValue() {
+            return maxValue;
+        }
+
+        public T getMeanValue() {
+            return meanValue;
+        }
+
+        public int getMinLength() {
+            return minLength;
+        }
+
+        public int getMaxLength() {
+            return maxLength;
+        }
+
+        public double getMeanLength() {
+            return meanLength;
+        }
     }
 
     private static StatisticsData<String> getStringStatistics(final StatisticsType type,
