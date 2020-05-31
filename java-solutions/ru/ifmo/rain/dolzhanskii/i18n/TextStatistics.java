@@ -275,7 +275,7 @@ public class TextStatistics {
         return StatisticsData.calculateDateStatistics(samples);
     }
 
-    public static Map<StatisticsType, StatisticsData<?>> getStatistics(final String text, final Locale inputLocale) {
+    static Map<StatisticsType, StatisticsData<?>> getStatistics(final String text, final Locale inputLocale) {
         final Map<StatisticsType, StatisticsData<?>> map = new HashMap<>();
 
         map.put(StatisticsType.SENTENCE, getStringStatistics(StatisticsType.SENTENCE,
