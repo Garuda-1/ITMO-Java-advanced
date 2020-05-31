@@ -1,4 +1,4 @@
-package ru.ifmo.rain.dolzhanskii.i18n.src;
+package ru.ifmo.rain.dolzhanskii.i18n;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -76,6 +76,7 @@ public class FileUtils {
                             : outputLocale;
                     final String meanKey;
                     final String mean;
+                    final String notAvailable = bundle.getString("notAvailable");
                     switch (type) {
                         case SENTENCE:
                         case LINE:
@@ -85,7 +86,7 @@ public class FileUtils {
                             break;
                         }
                         default:
-                            mean = stats.getMeanValue(dataLocale);
+                            mean = stats.getMeanValue(dataLocale, notAvailable);
                             meanKey = "mean" + sectionName;
                     }
 
@@ -98,15 +99,15 @@ public class FileUtils {
                                     ? bundle.getString("uniqueSingle")
                                     : bundle.getString("uniqueMultiple"),
                             bundle.getString("min" + sectionName),
-                            stats.getMinValue(dataLocale),
+                            stats.getMinValue(dataLocale, notAvailable),
                             bundle.getString("max" + sectionName),
-                            stats.getMaxValue(dataLocale),
+                            stats.getMaxValue(dataLocale, notAvailable),
                             bundle.getString("minLen" + sectionName),
                             stats.getMinLength(outputLocale),
-                            stats.getMinLengthValue(dataLocale),
+                            stats.getMinLengthValue(dataLocale, notAvailable),
                             bundle.getString("maxLen" + sectionName),
                             stats.getMaxLength(outputLocale),
-                            stats.getMaxLengthValue(dataLocale),
+                            stats.getMaxLengthValue(dataLocale, notAvailable),
                             bundle.getString(meanKey),
                             mean);
                 }).collect(Collectors.toList());

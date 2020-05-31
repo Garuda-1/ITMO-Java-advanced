@@ -1,4 +1,4 @@
-package ru.ifmo.rain.dolzhanskii.i18n.src;
+package ru.ifmo.rain.dolzhanskii.i18n;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -122,9 +122,9 @@ public class TextStatistics {
             }
         }
 
-        private String getFormatted(final Locale locale, T value) {
+        private String getFormatted(final Locale locale, T value, final String notAvailable) {
             if (value == null) {
-                return "N/A";
+                return notAvailable;
             }
             final Format format = getAppropriateFormat(locale, false);
             return format == null ? value.toString() : format.format(value);
@@ -147,32 +147,32 @@ public class TextStatistics {
             return countUnique;
         }
 
-        String getMinValue(final Locale locale) {
-            return getFormatted(locale, minValue);
+        String getMinValue(final Locale locale, final String notAvailable) {
+            return getFormatted(locale, minValue, notAvailable);
         }
 
-        String getMaxValue(final Locale locale) {
-            return getFormatted(locale, maxValue);
+        String getMaxValue(final Locale locale, final String notAvailable) {
+            return getFormatted(locale, maxValue, notAvailable);
         }
 
-        String getMeanValue(final Locale locale) {
-            return getFormatted(locale, meanValue);
+        String getMeanValue(final Locale locale, final String notAvailable) {
+            return getFormatted(locale, meanValue, notAvailable);
         }
 
         String getMinLength(final Locale outputLocale) {
             return getFormatted(outputLocale, minLength);
         }
 
-        String getMinLengthValue(final Locale locale) {
-            return getFormatted(locale, minLengthValue);
+        String getMinLengthValue(final Locale locale, final String notAvailable) {
+            return getFormatted(locale, minLengthValue, notAvailable);
         }
 
         String getMaxLength(final Locale outputLocale) {
             return getFormatted(outputLocale, maxLength);
         }
 
-        String getMaxLengthValue(final Locale locale) {
-            return getFormatted(locale, maxLengthValue);
+        String getMaxLengthValue(final Locale locale, final String notAvailable) {
+            return getFormatted(locale, maxLengthValue, notAvailable);
         }
 
         String getMeanLength(final Locale outputLocale) {
