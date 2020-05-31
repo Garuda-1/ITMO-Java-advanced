@@ -16,7 +16,7 @@ public class TextStatistics {
         LINE,
         WORD,
         NUMBER,
-        CURRENCY,
+        MONEY,
         DATE
     }
 
@@ -28,9 +28,11 @@ public class TextStatistics {
         private T maxValue;
         private T meanValue;
         private int minLength;
+        private T minLengthValue;
         private int maxLength;
+        private T maxLengthValue;
         private double meanLength;
-        private List<T> data;
+//        private List<T> data;
 
         private StatisticsData() {}
 
@@ -45,10 +47,14 @@ public class TextStatistics {
 
             stats.countTotal = samples.size();
 
-            stats.minLength = samples.stream().map(sampleLength).min(Comparator.naturalOrder()).orElseThrow();
-            stats.maxLength = samples.stream().map(sampleLength).max(Comparator.naturalOrder()).orElseThrow();
+            samples.sort(Comparator.comparing(sampleLength));
+
+            stats.minLength = sampleLength.apply(samples.get(0));
+            stats.minLengthValue = samples.get(0);
+            stats.maxLength = sampleLength.apply(samples.get(samples.size() - 1));
+            stats.maxLengthValue = samples.get(samples.size() - 1);
             stats.meanLength = (double) samples.stream().map(sampleLength).reduce(0, Integer::sum) /
-                    stats.countTotal;
+                    samples.size();
 
             samples.sort(valueComparator);
 
@@ -62,7 +68,7 @@ public class TextStatistics {
                 }
             }
 
-            stats.data = samples;
+//            stats.data = samples;
 
             return stats;
         }
@@ -76,7 +82,7 @@ public class TextStatistics {
         static StatisticsData<Number> calculateNumberStatistics(final StatisticsType type, final List<Number> samples) {
             StatisticsData<Number> stats = calculateCommonStatistics(type, samples, n -> n.toString().length(),
                     Comparator.comparingDouble(Number::doubleValue));
-            stats.meanValue = samples.stream().map(n -> BigDecimal.valueOf(n.doubleValue()))
+            stats.meanValue = samples.isEmpty() ? null : samples.stream().map(n -> BigDecimal.valueOf(n.doubleValue()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                     .divide(BigDecimal.valueOf(stats.countTotal), RoundingMode.HALF_EVEN);
             return stats;
@@ -85,7 +91,7 @@ public class TextStatistics {
         static StatisticsData<Date> calculateDateStatistics(final List<Date> samples) {
             StatisticsData<Date> stats = calculateCommonStatistics(StatisticsType.DATE, samples,
                     n -> n.toString().length(), Comparator.comparingLong(Date::getTime));
-            stats.meanValue = new Date(samples.stream().map(n -> BigInteger.valueOf(n.getTime()))
+            stats.meanValue = samples.isEmpty() ? null : new Date(samples.stream().map(n -> BigInteger.valueOf(n.getTime()))
                     .reduce(BigInteger.ZERO, BigInteger::add)
                     .divide(BigInteger.valueOf(stats.countTotal)).longValue());
             return stats;
@@ -95,36 +101,82 @@ public class TextStatistics {
             return type;
         }
 
-        public int getCountTotal() {
-            return countTotal;
+        private Format getAppropriateFormat(final Locale locale, boolean isNumeric) {
+            if (isNumeric) {
+                Format format = NumberFormat.getNumberInstance(locale);
+                ((DecimalFormat) format).applyPattern("#0.###");
+                return format;
+            }
+            switch (type) {
+                case NUMBER:
+                    return NumberFormat.getNumberInstance(locale);
+
+                case MONEY:
+                    return NumberFormat.getCurrencyInstance(locale);
+
+                case DATE:
+                    return DateFormat.getDateInstance(DateFormat.SHORT, locale);
+
+                default:
+                    return null;
+            }
         }
 
-        public int getCountUnique() {
+        private String getFormatted(final Locale locale, T value) {
+            if (value == null) {
+                return "N/A";
+            }
+            final Format format = getAppropriateFormat(locale, false);
+            return format == null ? value.toString() : format.format(value);
+        }
+
+        private String getFormatted(final Locale locale, Number value) {
+            final Format format = getAppropriateFormat(locale, true);
+            return format == null ? value.toString() : format.format(value);
+        }
+
+        String getCountTotal(final Locale outputLocale) {
+            return getFormatted(outputLocale, countTotal);
+        }
+
+        String getCountUnique(final Locale outputLocale) {
+            return getFormatted(outputLocale, countUnique);
+        }
+
+        int getCountUnique() {
             return countUnique;
         }
 
-        public T getMinValue() {
-            return minValue;
+        String getMinValue(final Locale locale) {
+            return getFormatted(locale, minValue);
         }
 
-        public T getMaxValue() {
-            return maxValue;
+        String getMaxValue(final Locale locale) {
+            return getFormatted(locale, maxValue);
         }
 
-        public T getMeanValue() {
-            return meanValue;
+        String getMeanValue(final Locale locale) {
+            return getFormatted(locale, meanValue);
         }
 
-        public int getMinLength() {
-            return minLength;
+        String getMinLength(final Locale outputLocale) {
+            return getFormatted(outputLocale, minLength);
         }
 
-        public int getMaxLength() {
-            return maxLength;
+        String getMinLengthValue(final Locale locale) {
+            return getFormatted(locale, minLengthValue);
         }
 
-        public double getMeanLength() {
-            return meanLength;
+        String getMaxLength(final Locale outputLocale) {
+            return getFormatted(outputLocale, maxLength);
+        }
+
+        String getMaxLengthValue(final Locale locale) {
+            return getFormatted(locale, maxLengthValue);
+        }
+
+        String getMeanLength(final Locale outputLocale) {
+            return getFormatted(outputLocale, meanLength);
         }
     }
 
@@ -215,7 +267,7 @@ public class TextStatistics {
 
     private static StatisticsData<Number> getMoneyStatistics(final String text, final Locale locale) {
         List<Number> samples = getParsableSamples(text, locale, (t, p) -> parseMoney(t, p, locale));
-        return StatisticsData.calculateNumberStatistics(StatisticsType.CURRENCY, samples);
+        return StatisticsData.calculateNumberStatistics(StatisticsType.MONEY, samples);
     }
 
     private static StatisticsData<Date> getDateStatistics(final String text, final Locale locale) {
@@ -235,7 +287,7 @@ public class TextStatistics {
                 s -> Character.isLetter(s.charAt(0))));
 
         map.put(StatisticsType.NUMBER, getNumberStatistics(text, inputLocale));
-        map.put(StatisticsType.CURRENCY, getMoneyStatistics(text, inputLocale));
+        map.put(StatisticsType.MONEY, getMoneyStatistics(text, inputLocale));
 
         map.put(StatisticsType.DATE, getDateStatistics(text, inputLocale));
 
@@ -280,6 +332,8 @@ public class TextStatistics {
         Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics =
                 TextStatistics.getStatistics(text, inputLocale);
 
+        final String report = FileUtils.generateReport(inputLocale, outputLocale, statistics, args[2]);
 
+        FileUtils.writeFile(args[3], report);
     }
 }

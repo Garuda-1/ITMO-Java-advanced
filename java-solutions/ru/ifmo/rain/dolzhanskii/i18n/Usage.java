@@ -33,8 +33,10 @@ public class Usage {
                 break;
         }
 
+        locale = Locale.US;
+
         ResourceBundle bundle = 
-            ResourceBundle.getBundle("i18n.UsageResourceBundle", locale);
+            ResourceBundle.getBundle("ru.ifmo.rain.dolzhanskii.i18n.UsageResourceBundle", locale);
         printUsage(bundle);
     }
 }
