@@ -10,25 +10,20 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class FileUtils {
-    private static void createParentDirectories(final String outputFileName) {
-        Path outputFilePath;
-        try {
-            outputFilePath = Paths.get(outputFileName);
-            Path parentDirectory = outputFilePath.getParent();
-            if (parentDirectory != null) {
-                Files.createDirectories(parentDirectory);
-            }
-        } catch (InvalidPathException | IOException e) {
-            throw new RuntimeException("Unable to create output file parent directories '" + outputFileName + "'");
+    public static String readFile(final Path sourceDir, final String fileName) throws IOException {
+        return Files.readString(sourceDir.resolve(Path.of(fileName)));
+    }
+
+    static String readFile(final Path filePath) throws IOException {
+        return Files.readString(filePath);
+    }
+
+    static void writeFile(final String outputFileName, final String data) throws IOException, InvalidPathException {
+        final Path outputFilePath = Paths.get(outputFileName);
+        final Path parentDirectory = outputFilePath.getParent();
+        if (parentDirectory != null) {
+            Files.createDirectories(parentDirectory);
         }
-    }
-
-    public static String readFile(final String inputFileName) throws IOException {
-        return Files.readString(Paths.get(inputFileName));
-    }
-
-    static void writeFile(final String outputFileName, final String data) throws IOException {
-        createParentDirectories(outputFileName);
         Files.writeString(Paths.get(outputFileName), data, StandardCharsets.UTF_8);
     }
 
@@ -39,18 +34,18 @@ public class FileUtils {
         ResourceBundle bundle = ResourceBundle
                 .getBundle("ru.ifmo.rain.dolzhanskii.i18n.resources.Bundle", outputLocale);
 
-        final String sourceDir = "/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/resources/";
+        final Path sourceDir = Path.of("/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/resources");
 
-        final String head = readFile(sourceDir + "/head-template.html");
+        final String head = readFile(sourceDir,"head-template.html");
         final String generatedHead = String.format(head,
                 bundle.getString("title"));
 
-        final String title = readFile(sourceDir + "/title-template.html");
+        final String title = readFile(sourceDir, "title-template.html");
         final String generatedTitle = String.format(title,
                 bundle.getString("analyzedFile"),
                 fileName);
 
-        final String summary = readFile(sourceDir + "/summary-template.html");
+        final String summary = readFile(sourceDir, "summary-template.html");
         final String generatedSummary = String.format(summary,
                 bundle.getString("summaryStats"),
                 bundle.getString("sumSentence"),
@@ -66,7 +61,7 @@ public class FileUtils {
                 bundle.getString("sumDate"),
                 data.get(TextStatistics.StatisticsType.DATE).getCountTotal(outputLocale));
 
-        final String section = readFile(sourceDir + "/section-template.html");
+        final String section = readFile(sourceDir, "section-template.html");
         List<String> generatedSections = Arrays.stream(TextStatistics.StatisticsType.values())
                 .map(type -> {
                     final String sectionName = type.toString().charAt(0) + type.toString().substring(1).toLowerCase();
@@ -112,7 +107,7 @@ public class FileUtils {
                             mean);
                 }).collect(Collectors.toList());
 
-        final String report = readFile(sourceDir + "/report-template.html");
+        final String report = readFile(sourceDir, "report-template.html");
         return String.format(report,
                 generatedHead,
                 generatedTitle,

@@ -1,10 +1,12 @@
 package ru.ifmo.rain.dolzhanskii.i18n;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
+//import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.text.*;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -33,7 +35,6 @@ public class TextStatistics {
         private int maxLength;
         private T maxLengthValue;
         private double meanLength;
-//        private List<T> data;
 
         private StatisticsData() {}
 
@@ -68,8 +69,6 @@ public class TextStatistics {
                     stats.countUnique++;
                 }
             }
-
-//            stats.data = samples;
 
             return stats;
         }
@@ -176,44 +175,8 @@ public class TextStatistics {
             return getFormatted(outputLocale, meanLength);
         }
 
-        public int getCountTotal() {
-            return countTotal;
-        }
-
-        public int getCountUnique() {
+        int getCountUnique() {
             return countUnique;
-        }
-
-        public T getMinValue() {
-            return minValue;
-        }
-
-        public T getMaxValue() {
-            return maxValue;
-        }
-
-        public T getMeanValue() {
-            return meanValue;
-        }
-
-        public int getMinLength() {
-            return minLength;
-        }
-
-        public T getMinLengthValue() {
-            return minLengthValue;
-        }
-
-        public int getMaxLength() {
-            return maxLength;
-        }
-
-        public T getMaxLengthValue() {
-            return maxLengthValue;
-        }
-
-        public double getMeanLength() {
-            return meanLength;
         }
     }
 
@@ -352,57 +315,71 @@ public class TextStatistics {
         }
     }
 
-    public static void printStats(Map<StatisticsType, StatisticsData<?>> statistics) throws IllegalAccessException {
-        for (StatisticsType type : StatisticsType.values()) {
-            final StatisticsData<?> data = statistics.get(type);
-            final Field[] fields = data.getClass().getDeclaredFields();
-            for (Field field : fields) {
-                if (field.getName().equals("type")) {
-                    continue;
-                }
-                field.setAccessible(true);
-                Object contents = field.get(data);
-                final String contentsStr;
-                if (contents == null) {
-                    contentsStr = "null";
-                } else {
-                    contentsStr = contents.toString();
-                }
-                final String fieldStr = type.toString().toLowerCase() + "_" +
-                        field.getName() + " = " + contentsStr;
-                final StringBuilder builder = new StringBuilder();
-                for (char c : fieldStr.toCharArray()) {
-                    if (c == '\n') {
-                        builder.append("\\n");
-                    } else {
-                        builder.append(c);
-                    }
-                }
-                System.out.println(builder.toString());
-            }
-            System.out.println();
-        }
-    }
+//    public static void printStats(Map<StatisticsType, StatisticsData<?>> statistics) throws IllegalAccessException {
+//        for (StatisticsType type : StatisticsType.values()) {
+//            final StatisticsData<?> data = statistics.get(type);
+//            final Field[] fields = data.getClass().getDeclaredFields();
+//            for (Field field : fields) {
+//                if (field.getName().equals("type")) {
+//                    continue;
+//                }
+//                field.setAccessible(true);
+//                Object contents = field.get(data);
+//                final String contentsStr;
+//                if (contents == null) {
+//                    contentsStr = "null";
+//                } else {
+//                    contentsStr = contents.toString();
+//                }
+//                final String fieldStr = type.toString().toLowerCase() + "_" +
+//                        field.getName() + " = " + contentsStr;
+//                final StringBuilder builder = new StringBuilder();
+//                for (char c : fieldStr.toCharArray()) {
+//                    if (c == '\n') {
+//                        builder.append("\\n");
+//                    } else {
+//                        builder.append(c);
+//                    }
+//                }
+//                System.out.println(builder.toString());
+//            }
+//            System.out.println();
+//        }
+//    }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (args.length != 4 || Arrays.stream(args).anyMatch(Objects::isNull)) {
-            // TODO: Internationalize
             System.out.println("Usage: TextStatistics inputLocale outputLocale inputFileName outputFileName");
             return;
         }
         final Locale inputLocale = getLocaleByArg(args[0]);
         final Locale outputLocale = getLocaleByArg(args[1]);
         if (!(outputLocale.getLanguage().equals("ru") || outputLocale.getLanguage().equals("en"))) {
-            throw new IllegalArgumentException("Unsupported output locale provided");
+            System.err.println("Error: Unsupported output locale provided");
         }
 
-        final String text = FileUtils.readFile(args[2]);
-
+        final String text;
+        try {
+            text = FileUtils.readFile(Path.of(args[2]));
+        } catch (final IOException | InvalidPathException e) {
+            System.err.println("Error: Failed to read input file, " + e.getMessage());
+            return;
+        }
         Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics =
                 TextStatistics.getStatistics(text, inputLocale);
 
-        final String report = FileUtils.generateReport(inputLocale, outputLocale, statistics, args[2]);
+        final String report;
+        try {
+            report = FileUtils.generateReport(inputLocale, outputLocale, statistics, args[2]);
+        } catch (final IOException e) {
+            System.err.println("Error: Failed to generate report, " + e.getMessage());
+            return;
+        }
 
-        FileUtils.writeFile(args[3], report);
+        try {
+            FileUtils.writeFile(args[3], report);
+        } catch (final IOException | InvalidPathException e) {
+            System.err.println("Error: Failed to write a report file, " + e.getMessage());
+        }
     }
 }

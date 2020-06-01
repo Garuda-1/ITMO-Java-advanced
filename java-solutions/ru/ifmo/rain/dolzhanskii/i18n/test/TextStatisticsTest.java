@@ -12,13 +12,14 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TextStatisticsTest extends Assert {
     private Locale locale;
-    private final String resourceDirectory = "/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/test/resources/";
+    private final Path resourceDirectory = Path.of("/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/test/resources/");
 
     @Parameterized.Parameters(name = "{0}_{1}")
     public static Collection languages() {
@@ -53,7 +54,6 @@ public class TextStatisticsTest extends Assert {
 
                     try {
                         final String expectedString = bundle.getString(type.toString().toLowerCase() + "_" + fieldName);
-//                        System.out.println(gotString + " --- " + expectedString);
                         assertEquals(expectedString, gotString);
                     } catch (final MissingResourceException e) {
                         // Ignored.
@@ -66,7 +66,7 @@ public class TextStatisticsTest extends Assert {
     }
 
     private void testRoutine(final String testName) throws IOException, IllegalAccessException {
-        final String text = FileUtils.readFile(resourceDirectory + testName + "_" +
+        final String text = FileUtils.readFile(resourceDirectory, testName + "_" +
                 locale.getLanguage() + "_" + locale.getCountry() + ".txt");
         final Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics
                 = TextStatistics.getStatistics(text, locale);
