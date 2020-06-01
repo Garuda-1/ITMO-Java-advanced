@@ -13,9 +13,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.text.DateFormat;
-import java.text.Format;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,7 +72,6 @@ public class TextStatisticsTest extends Assert {
                 locale.getLanguage() + "_" + locale.getCountry() + ".txt");
         final Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics
                 = TextStatistics.getStatistics(text, locale);
-//        TextStatistics.printStats(statistics);
         validateStatistics(statistics, testName);
     }
 
