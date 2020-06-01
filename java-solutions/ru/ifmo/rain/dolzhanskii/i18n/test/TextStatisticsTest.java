@@ -67,7 +67,7 @@ public class TextStatisticsTest extends Assert {
         }
     }
 
-    private void testRoutine(final String testName) throws IOException, IllegalAccessException {
+    private void testRoutine(final String testName) throws IOException {
         final String text = FileUtils.readFile(resourceDirectory, testName + "_" +
                 locale.getLanguage() + "_" + locale.getCountry() + ".txt");
         final Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics
@@ -77,31 +77,31 @@ public class TextStatisticsTest extends Assert {
 
     @Test
     @DisplayName("Simple test")
-    public void simpleTest() throws IOException, IllegalAccessException {
+    public void simpleTest() throws IOException {
         testRoutine("simple");
     }
 
     @Test
     @DisplayName("Poem test")
-    public void poemTest() throws IOException, IllegalAccessException {
+    public void poemTest() throws IOException {
         testRoutine("poem");
     }
 
     @Test
     @DisplayName("Biography test")
-    public void biographyTest() throws IOException, IllegalAccessException {
+    public void biographyTest() throws IOException {
         testRoutine("biography");
     }
 
     @Test
     @DisplayName("Dates test")
-    public void datesTest() throws IOException, IllegalAccessException {
+    public void datesTest() throws IOException {
         testRoutine("dates");
     }
 
     @Test
     @DisplayName("Numerical test")
-    public void numericalTest() throws IOException, IllegalAccessException {
+    public void numericalTest() throws IOException {
         testRoutine("numerical");
     }
 }
