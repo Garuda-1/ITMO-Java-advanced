@@ -13,6 +13,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
+import java.text.DateFormat;
+import java.text.Format;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,16 +24,18 @@ public class TextStatisticsTest extends Assert {
     private Locale locale;
     private final Path resourceDirectory = Path.of("/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/test/resources/");
 
-    @Parameterized.Parameters(name = "{0}_{1}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection languages() {
         return Arrays.asList(new Object[][] {
-                {"ru", "RU"},
-                {"en", "US"}
+                {"ru-RU"},
+                {"en-US"},
+                {"ar-AE"}
         });
     }
 
-    public TextStatisticsTest(String currentLanguage, String currentCountry) {
-        this.locale = new Locale(currentLanguage, currentCountry);
+    public TextStatisticsTest(final String languageTag) {
+//        this.locale = new Locale(currentLanguage, currentCountry);
+        this.locale = new Locale.Builder().setLanguageTag(languageTag).build();
     }
 
     private void validateStatistics(
