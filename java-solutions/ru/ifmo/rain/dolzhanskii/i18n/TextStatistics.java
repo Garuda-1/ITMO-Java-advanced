@@ -1,6 +1,7 @@
 package ru.ifmo.rain.dolzhanskii.i18n;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -143,10 +144,6 @@ public class TextStatistics {
             return getFormatted(outputLocale, countUnique);
         }
 
-        int getCountUnique() {
-            return countUnique;
-        }
-
         String getMinValue(final Locale locale, final String notAvailable) {
             return getFormatted(locale, minValue, notAvailable);
         }
@@ -177,6 +174,46 @@ public class TextStatistics {
 
         String getMeanLength(final Locale outputLocale) {
             return getFormatted(outputLocale, meanLength);
+        }
+
+        public int getCountTotal() {
+            return countTotal;
+        }
+
+        public int getCountUnique() {
+            return countUnique;
+        }
+
+        public T getMinValue() {
+            return minValue;
+        }
+
+        public T getMaxValue() {
+            return maxValue;
+        }
+
+        public T getMeanValue() {
+            return meanValue;
+        }
+
+        public int getMinLength() {
+            return minLength;
+        }
+
+        public T getMinLengthValue() {
+            return minLengthValue;
+        }
+
+        public int getMaxLength() {
+            return maxLength;
+        }
+
+        public T getMaxLengthValue() {
+            return maxLengthValue;
+        }
+
+        public double getMeanLength() {
+            return meanLength;
         }
     }
 
@@ -275,7 +312,7 @@ public class TextStatistics {
         return StatisticsData.calculateDateStatistics(samples);
     }
 
-    static Map<StatisticsType, StatisticsData<?>> getStatistics(final String text, final Locale inputLocale) {
+    public static Map<StatisticsType, StatisticsData<?>> getStatistics(final String text, final Locale inputLocale) {
         final Map<StatisticsType, StatisticsData<?>> map = new HashMap<>();
 
         map.put(StatisticsType.SENTENCE, getStringStatistics(StatisticsType.SENTENCE,
@@ -312,6 +349,38 @@ public class TextStatistics {
             default: {
                 throw new IllegalArgumentException("Invalid locale provided");
             }
+        }
+    }
+
+    public static void printStats(Map<StatisticsType, StatisticsData<?>> statistics) throws IllegalAccessException {
+        for (StatisticsType type : StatisticsType.values()) {
+            final StatisticsData<?> data = statistics.get(type);
+            final Field[] fields = data.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                if (field.getName().equals("type")) {
+                    continue;
+                }
+                field.setAccessible(true);
+                Object contents = field.get(data);
+                final String contentsStr;
+                if (contents == null) {
+                    contentsStr = "null";
+                } else {
+                    contentsStr = contents.toString();
+                }
+                final String fieldStr = type.toString().toLowerCase() + "_" +
+                        field.getName() + " = " + contentsStr;
+                final StringBuilder builder = new StringBuilder();
+                for (char c : fieldStr.toCharArray()) {
+                    if (c == '\n') {
+                        builder.append("\\n");
+                    } else {
+                        builder.append(c);
+                    }
+                }
+                System.out.println(builder.toString());
+            }
+            System.out.println();
         }
     }
 

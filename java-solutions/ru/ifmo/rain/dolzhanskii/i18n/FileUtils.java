@@ -23,7 +23,7 @@ public class FileUtils {
         }
     }
 
-    static String readFile(final String inputFileName) throws IOException {
+    public static String readFile(final String inputFileName) throws IOException {
         return Files.readString(Paths.get(inputFileName));
     }
 
