@@ -5,10 +5,10 @@ import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractPerson<A extends Account> implements Person, Serializable {
     private final String firstName, lastName, passport;
-    protected final ConcurrentMap<String, Account> linkedAccounts;
+    protected final ConcurrentMap<String, A> linkedAccounts;
 
     AbstractPerson(final String firstName, final String lastName, final String passport,
-                   final ConcurrentMap<String, Account> linkedAccounts) {
+                   final ConcurrentMap<String, A> linkedAccounts) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.passport = passport;
@@ -31,7 +31,7 @@ public abstract class AbstractPerson<A extends Account> implements Person, Seria
     }
 
     @Override
-    public synchronized Account getLinkedAccount(final String subId) {
+    public synchronized A getLinkedAccount(final String subId) {
         final String id = getAccountId(subId);
         System.out.println("Retrieving linked account for " + getLastName() + " " + getFirstName() +
                 " (id = " + id + ")");

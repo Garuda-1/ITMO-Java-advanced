@@ -4,16 +4,15 @@ import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-class LocalPerson extends AbstractPerson implements Serializable {
-    LocalPerson(final RemotePerson remotePerson, ConcurrentMap<String, Account> map) {
+class LocalPerson extends AbstractPerson<LocalAccount> implements Serializable {
+    LocalPerson(final RemotePerson remotePerson, ConcurrentMap<String, LocalAccount> map) {
         super(remotePerson.getFirstName(), remotePerson.getLastName(), remotePerson.getPassport(), map);
     }
 
-    static ConcurrentMap<String, Account> exportAccounts(final RemotePerson remotePerson) {
-        final ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>(remotePerson.linkedAccounts);
+    static ConcurrentMap<String, LocalAccount> exportAccounts(final RemotePerson remotePerson) {
+        final ConcurrentHashMap<String, LocalAccount> linkedAccounts = new ConcurrentHashMap<>();
         remotePerson.linkedAccounts.forEach((key, account) ->
-                linkedAccounts.put(key, new LocalAccount(((RemoteAccount) account).getId(),
-                        ((RemoteAccount) account).getAmount())));
+                linkedAccounts.put(key, new LocalAccount(account.getId(), account.getAmount())));
         return linkedAccounts;
     }
 
@@ -22,6 +21,6 @@ class LocalPerson extends AbstractPerson implements Serializable {
         final String id = getAccountId(subId);
         System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +
                 " (id = " + id + ", local)");
-        return linkedAccounts.computeIfAbsent(id, LocalAccount::new);
+        return linkedAccounts.computeIfAbsent(id, (idTmp) -> new LocalAccount(id));
     }
 }

@@ -20,7 +20,7 @@ class RemotePerson extends AbstractPerson<RemoteAccount> {
                 try {
                     System.out.println("Creating linked account for " + getLastName() + " " + getFirstName() +
                             " (id = " + id + ", remote)");
-                    return bank.createAccount(accountId);
+                    return (RemoteAccount) bank.createAccount(accountId);
                 } catch (final RemoteException e) {
                     throw new UncheckedIOException(e);
                 }

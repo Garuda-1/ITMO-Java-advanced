@@ -36,7 +36,7 @@ public class RemoteBank implements Bank {
     }
 
     public Account createAccount(final String id) throws RemoteException {
-        return addInstanceById(id, RemoteAccount::new, accounts);
+        return addInstanceById(id, (idTmp) -> new RemoteAccount(id), accounts);
     }
 
     public Account getRemoteAccount(final String id) {
