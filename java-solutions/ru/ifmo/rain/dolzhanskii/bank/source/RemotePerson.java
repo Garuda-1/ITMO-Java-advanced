@@ -4,7 +4,7 @@ import java.io.UncheckedIOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
 
-class RemotePerson extends AbstractPerson {
+class RemotePerson extends AbstractPerson<RemoteAccount> {
     private final Bank bank;
 
     RemotePerson(final String firstName, final String lastName, final String passport, final Bank bank) {
