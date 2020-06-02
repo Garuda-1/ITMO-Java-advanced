@@ -329,34 +329,13 @@ public class TextStatistics {
         return map;
     }
 
-    private static Locale getLocaleByArg(String arg) {
-        String[] nameParts = arg.split("_");
-        switch (nameParts.length) {
-            case 0: {
-                return Locale.getDefault();
-            }
-            case 1: {
-                return new Locale(nameParts[0]);
-            }
-            case 2: {
-                return new Locale(nameParts[0], nameParts[1]);
-            }
-            case 3: {
-                return new Locale(nameParts[0], nameParts[1], nameParts[2]);
-            }
-            default: {
-                throw new IllegalArgumentException("Invalid locale provided");
-            }
-        }
-    }
-
     public static void main(String[] args) {
         if (args.length != 4 || Arrays.stream(args).anyMatch(Objects::isNull)) {
             System.out.println("Usage: TextStatistics inputLocale outputLocale inputFileName outputFileName");
             return;
         }
-        final Locale inputLocale = getLocaleByArg(args[0]);
-        final Locale outputLocale = getLocaleByArg(args[1]);
+        final Locale inputLocale = new Locale.Builder().setLanguageTag(args[0]).build();
+        final Locale outputLocale = new Locale.Builder().setLanguageTag(args[1]).build();
         if (!(outputLocale.getLanguage().equals("ru") || outputLocale.getLanguage().equals("en"))) {
             System.err.println("Error: Unsupported output locale provided");
         }

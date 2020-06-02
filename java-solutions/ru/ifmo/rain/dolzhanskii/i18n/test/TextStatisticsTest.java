@@ -19,9 +19,10 @@ import java.util.stream.Collectors;
 @RunWith(Parameterized.class)
 public class TextStatisticsTest extends Assert {
     private Locale locale;
-    private final Path resourceDirectory = Path.of("/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/test/resources/");
+    private final Path resourceDirectory = Path.of(
+            "java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/test/resources/");
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameterized.Parameters(name = "Locale: {0}")
     public static Collection languages() {
         return Arrays.asList(new Object[][] {
                 {"ru-RU"},
@@ -31,7 +32,6 @@ public class TextStatisticsTest extends Assert {
     }
 
     public TextStatisticsTest(final String languageTag) {
-//        this.locale = new Locale(currentLanguage, currentCountry);
         this.locale = new Locale.Builder().setLanguageTag(languageTag).build();
     }
 
@@ -55,7 +55,8 @@ public class TextStatisticsTest extends Assert {
                     final String gotString = (gotObject == null) ? "null" : gotObject.toString();
 
                     try {
-                        final String expectedString = bundle.getString(type.toString().toLowerCase() + "_" + fieldName);
+                        final String expectedString = bundle.getString(type.toString().toLowerCase() + "_" +
+                                fieldName);
                         assertEquals(expectedString, gotString);
                     } catch (final MissingResourceException e) {
                         // Ignored.

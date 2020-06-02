@@ -34,7 +34,8 @@ public class FileUtils {
         ResourceBundle bundle = ResourceBundle
                 .getBundle("ru.ifmo.rain.dolzhanskii.i18n.resources.Bundle", outputLocale);
 
-        final Path sourceDir = Path.of("/home/oktet/IdeaProjects/JA/java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/resources");
+        final Path sourceDir = Path.of(
+                "java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/resources");
 
         final String head = readFile(sourceDir,"head-template.html");
         final String generatedHead = String.format(head,

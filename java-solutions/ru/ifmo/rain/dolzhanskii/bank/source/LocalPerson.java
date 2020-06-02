@@ -11,10 +11,9 @@ class LocalPerson extends AbstractPerson implements Serializable {
 
     static ConcurrentMap<String, Account> exportAccounts(final RemotePerson remotePerson) {
         final ConcurrentHashMap<String, Account> linkedAccounts = new ConcurrentHashMap<>(remotePerson.linkedAccounts);
-        remotePerson.linkedAccounts.forEach((key, account) -> {
-            linkedAccounts.put(key, new LocalAccount(((RemoteAccount) account).getId(),
-                    ((RemoteAccount) account).getAmount()));
-        });
+        remotePerson.linkedAccounts.forEach((key, account) ->
+                linkedAccounts.put(key, new LocalAccount(((RemoteAccount) account).getId(),
+                        ((RemoteAccount) account).getAmount())));
         return linkedAccounts;
     }
 
