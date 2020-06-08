@@ -1,17 +1,27 @@
 package ru.ifmo.rain.dolzhanskii.i18n;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FileUtils {
-    public static String readFile(final Path sourceDir, final String fileName) throws IOException {
-        return Files.readString(sourceDir.resolve(Path.of(fileName)));
+    public static String readResourceFile(final Class<?> clazz, final String resourceName) throws IOException {
+        final URL url = clazz.getResource("resources/" + resourceName);
+        if (url == null) {
+            throw new FileNotFoundException("Resource file not found");
+        }
+        return Files.readString(Path.of(url.getPath()));
     }
 
     static String readFile(final Path filePath) throws IOException {
@@ -34,81 +44,87 @@ public class FileUtils {
         ResourceBundle bundle = ResourceBundle
                 .getBundle("ru.ifmo.rain.dolzhanskii.i18n.resources.Bundle", outputLocale);
 
-        final Path sourceDir = Path.of(
-                "java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/resources");
-
-        final String head = readFile(sourceDir,"head-template.html");
+        final String head = readResourceFile(FileUtils.class, "head-template.html");
         final String generatedHead = String.format(head,
                 bundle.getString("title"));
 
-        final String title = readFile(sourceDir, "title-template.html");
+        final String title = readResourceFile(FileUtils.class, "title-template.html");
         final String generatedTitle = String.format(title,
-                bundle.getString("analyzedFile"),
-                fileName);
+                MessageFormat.format(bundle.getString("analyzedFile"), fileName));
 
-        final String summary = readFile(sourceDir, "summary-template.html");
-        final String generatedSummary = String.format(summary,
-                bundle.getString("summaryStats"),
-                bundle.getString("sumSentence"),
-                data.get(TextStatistics.StatisticsType.SENTENCE).getCountTotal(outputLocale),
-                bundle.getString("sumLine"),
-                data.get(TextStatistics.StatisticsType.LINE).getCountTotal(outputLocale),
-                bundle.getString("sumWord"),
-                data.get(TextStatistics.StatisticsType.WORD).getCountTotal(outputLocale),
-                bundle.getString("sumNumber"),
-                data.get(TextStatistics.StatisticsType.NUMBER).getCountTotal(outputLocale),
-                bundle.getString("sumMoney"),
-                data.get(TextStatistics.StatisticsType.MONEY).getCountTotal(outputLocale),
-                bundle.getString("sumDate"),
-                data.get(TextStatistics.StatisticsType.DATE).getCountTotal(outputLocale));
+        final String statFormat = bundle.getString("fmtStat");
+        final String statFormatUnique = bundle.getString("fmtStatUnique");
+        final String statFormatExample = bundle.getString("fmtStatEx");
 
-        final String section = readFile(sourceDir, "section-template.html");
+        final MessageFormat numberFormat = new MessageFormat(bundle.getString("fmtNumber"), outputLocale);
+
+        final Function<TextStatistics.StatisticsType, String> sectionNameFunction =
+                type -> type.toString().charAt(0) + type.toString().substring(1).toLowerCase();
+
+        final String summary = readResourceFile(FileUtils.class, "summary-template.html");
+        final List<String> summaryArgs = new ArrayList<>();
+        summaryArgs.add(bundle.getString("summaryStats"));
+        Arrays.stream(TextStatistics.StatisticsType.values())
+                .map(t -> MessageFormat.format(statFormat, bundle.getString("sum" + sectionNameFunction.apply(t)),
+                        numberFormat.format(new Object[]{data.get(t).getCountTotal()})))
+                .forEach(summaryArgs::add);
+        final String generatedSummary = String.format(summary, (Object[]) summaryArgs.toArray(new Object[0]));
+
+        final String section = readResourceFile(FileUtils.class, "section-template.html");
+        final BiFunction<Object, MessageFormat, Object> defaultFilter =
+                (o, f) -> o == null ? bundle.getString("notAvailable") : f.format(new Object[]{o});
         List<String> generatedSections = Arrays.stream(TextStatistics.StatisticsType.values())
                 .map(type -> {
-                    final String sectionName = type.toString().charAt(0) + type.toString().substring(1).toLowerCase();
                     final TextStatistics.StatisticsData stats = data.get(type);
-                    final Locale dataLocale = (type == TextStatistics.StatisticsType.MONEY)
-                            ? inputLocale
-                            : outputLocale;
-                    final String meanKey;
+
+                    final MessageFormat dataFormat;
                     final String mean;
-                    final String notAvailable = bundle.getString("notAvailable");
+                    final String meanKey;
+                    final String sectionName = sectionNameFunction.apply(type);
                     switch (type) {
                         case SENTENCE:
                         case LINE:
                         case WORD: {
-                            mean = stats.getMeanLength(outputLocale);
+                            dataFormat = new MessageFormat(bundle.getString("fmtString"), inputLocale);
+                            mean = numberFormat.format(new Object[]{stats.getMeanLength()});
                             meanKey = "meanLen" + sectionName;
                             break;
                         }
                         default:
-                            mean = stats.getMeanValue(dataLocale, notAvailable);
+                            dataFormat = new MessageFormat(bundle.getString("fmt" + sectionName),
+                                    type == TextStatistics.StatisticsType.MONEY ? inputLocale : outputLocale);
+                            mean = defaultFilter.apply(stats.getMeanValue(), dataFormat).toString();
                             meanKey = "mean" + sectionName;
                     }
 
+
                     return String.format(section,
                             bundle.getString("stats" + sectionName),
-                            bundle.getString("sum" + sectionName),
-                            stats.getCountTotal(outputLocale),
-                            stats.getCountUnique(outputLocale),
-                            (stats.getCountUnique() % 10 == 1)
-                                    ? bundle.getString("uniqueSingle")
-                                    : bundle.getString("uniqueMultiple"),
-                            bundle.getString("min" + sectionName),
-                            stats.getMinValue(dataLocale, notAvailable),
-                            bundle.getString("max" + sectionName),
-                            stats.getMaxValue(dataLocale, notAvailable),
-                            bundle.getString("minLen" + sectionName),
-                            stats.getMinLength(outputLocale),
-                            stats.getMinLengthValue(dataLocale, notAvailable),
-                            bundle.getString("maxLen" + sectionName),
-                            stats.getMaxLength(outputLocale),
-                            stats.getMaxLengthValue(dataLocale, notAvailable),
-                            bundle.getString(meanKey),
-                            mean);
+                            MessageFormat.format(statFormatUnique,
+                                    bundle.getString("sum" + sectionName),
+                                    stats.getCountTotal(),
+                                    stats.getCountUnique(),
+                                    bundle.getString("unique")),
+                            MessageFormat.format(statFormat,
+                                    bundle.getString("min" + sectionName),
+                                    defaultFilter.apply(stats.getMinValue(), dataFormat)),
+                            MessageFormat.format(statFormat,
+                                    bundle.getString("max" + sectionName),
+                                    defaultFilter.apply(stats.getMaxValue(), dataFormat)),
+                            MessageFormat.format(statFormatExample,
+                                    bundle.getString("minLen" + sectionName),
+                                    numberFormat.format(new Object[]{stats.getMinLength()}),
+                                    defaultFilter.apply(stats.getMinLengthValue(), dataFormat)),
+                            MessageFormat.format(statFormatExample,
+                                    bundle.getString("maxLen" + sectionName),
+                                    numberFormat.format(new Object[]{stats.getMaxLength()}),
+                                    defaultFilter.apply(stats.getMaxLengthValue(), dataFormat)),
+                            MessageFormat.format(statFormat,
+                                    bundle.getString(meanKey),
+                                    mean));
                 }).collect(Collectors.toList());
 
-        final String report = readFile(sourceDir, "report-template.html");
+        final String report = readResourceFile(FileUtils.class, "report-template.html");
         return String.format(report,
                 generatedHead,
                 generatedTitle,
@@ -119,5 +135,37 @@ public class FileUtils {
                 generatedSections.get(3),
                 generatedSections.get(4),
                 generatedSections.get(5));
+    }
+
+    public static void printStats(Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics) throws IllegalAccessException {
+        for (TextStatistics.StatisticsType type : TextStatistics.StatisticsType.values()) {
+            final TextStatistics.StatisticsData<?> data = statistics.get(type);
+            final Field[] fields = data.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                if (field.getName().equals("type")) {
+                    continue;
+                }
+                field.setAccessible(true);
+                Object contents = field.get(data);
+                final String contentsStr;
+                if (contents == null) {
+                    contentsStr = "null";
+                } else {
+                    contentsStr = contents.toString();
+                }
+                final String fieldStr = type.toString().toLowerCase() + "_" +
+                        field.getName() + " = " + contentsStr;
+                final StringBuilder builder = new StringBuilder();
+                for (char c : fieldStr.toCharArray()) {
+                    if (c == '\n') {
+                        builder.append("\\n");
+                    } else {
+                        builder.append(c);
+                    }
+                }
+                System.out.println(builder.toString());
+            }
+            System.out.println();
+        }
     }
 }

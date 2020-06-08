@@ -12,15 +12,12 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TextStatisticsTest extends Assert {
     private Locale locale;
-    private final Path resourceDirectory = Path.of(
-            "java-advanced-2020-solutions/java-solutions/ru/ifmo/rain/dolzhanskii/i18n/test/resources/");
 
     @Parameterized.Parameters(name = "Locale: {0}")
     public static Collection languages() {
@@ -69,7 +66,7 @@ public class TextStatisticsTest extends Assert {
     }
 
     private void testRoutine(final String testName) throws IOException {
-        final String text = FileUtils.readFile(resourceDirectory, testName + "_" +
+        final String text = FileUtils.readResourceFile(TextStatisticsTest.class, testName + "_" +
                 locale.getLanguage() + "_" + locale.getCountry() + ".txt");
         final Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics
                 = TextStatistics.getStatistics(text, locale);

@@ -121,59 +121,6 @@ public class TextStatistics {
             }
         }
 
-        private String getFormatted(final Locale locale, T value, final String notAvailable) {
-            if (value == null) {
-                return notAvailable;
-            }
-            final Format format = getAppropriateFormat(locale, false);
-            return format == null ? value.toString() : format.format(value);
-        }
-
-        private String getFormatted(final Locale locale, Number value) {
-            final Format format = getAppropriateFormat(locale, true);
-            return format == null ? value.toString() : format.format(value);
-        }
-
-        String getCountTotal(final Locale outputLocale) {
-            return getFormatted(outputLocale, countTotal);
-        }
-
-        String getCountUnique(final Locale outputLocale) {
-            return getFormatted(outputLocale, countUnique);
-        }
-
-        String getMinValue(final Locale locale, final String notAvailable) {
-            return getFormatted(locale, minValue, notAvailable);
-        }
-
-        String getMaxValue(final Locale locale, final String notAvailable) {
-            return getFormatted(locale, maxValue, notAvailable);
-        }
-
-        String getMeanValue(final Locale locale, final String notAvailable) {
-            return getFormatted(locale, meanValue, notAvailable);
-        }
-
-        String getMinLength(final Locale outputLocale) {
-            return getFormatted(outputLocale, minLength);
-        }
-
-        String getMinLengthValue(final Locale locale, final String notAvailable) {
-            return getFormatted(locale, minLengthValue, notAvailable);
-        }
-
-        String getMaxLength(final Locale outputLocale) {
-            return getFormatted(outputLocale, maxLength);
-        }
-
-        String getMaxLengthValue(final Locale locale, final String notAvailable) {
-            return getFormatted(locale, maxLengthValue, notAvailable);
-        }
-
-        String getMeanLength(final Locale outputLocale) {
-            return getFormatted(outputLocale, meanLength);
-        }
-
         public int getCountTotal() {
             return countTotal;
         }
@@ -224,7 +171,7 @@ public class TextStatistics {
              start = end, end = breakIterator.next()) {
             final String sample = text.substring(start, end);
             if (filter.test(sample)) {
-                samples.add(type == StatisticsType.WORD ? sample.toLowerCase() : sample);
+                samples.add(type == StatisticsType.WORD ? sample.toLowerCase().trim() : sample.trim());
             }
         }
         return StatisticsData.calculateStringStatistics(type, samples, locale);
@@ -310,16 +257,21 @@ public class TextStatistics {
         return StatisticsData.calculateDateStatistics(samples);
     }
 
+    private static void putStringStatistics(final Map<StatisticsType, StatisticsData<?>> map, final StatisticsType type,
+                                            final Function<Locale, BreakIterator> breakIteratorFactory,
+                                            final String text, final Locale inputLocale,
+                                            final Predicate<String> predicate) {
+        map.put(type, getStringStatistics(type, breakIteratorFactory.apply(inputLocale), text, inputLocale, predicate));
+    }
+
     public static Map<StatisticsType, StatisticsData<?>> getStatistics(final String text, final Locale inputLocale) {
         final Map<StatisticsType, StatisticsData<?>> map = new HashMap<>();
 
-        map.put(StatisticsType.SENTENCE, getStringStatistics(StatisticsType.SENTENCE,
-                BreakIterator.getSentenceInstance(inputLocale), text, inputLocale, s -> true));
-        map.put(StatisticsType.LINE, getStringStatistics(StatisticsType.LINE,
-                BreakIterator.getLineInstance(inputLocale), text, inputLocale, s -> true));
-        map.put(StatisticsType.WORD, getStringStatistics(StatisticsType.WORD,
-                BreakIterator.getWordInstance(inputLocale), text, inputLocale,
-                s -> Character.isLetter(s.charAt(0))));
+        putStringStatistics(map, StatisticsType.SENTENCE, BreakIterator::getSentenceInstance, text, inputLocale,
+                s -> true);
+        putStringStatistics(map, StatisticsType.LINE, BreakIterator::getLineInstance, text, inputLocale, s -> true);
+        putStringStatistics(map, StatisticsType.WORD, BreakIterator::getWordInstance, text, inputLocale,
+                s -> Character.isLetter(s.charAt(0)));
 
         map.put(StatisticsType.NUMBER, getNumberStatistics(text, inputLocale));
         map.put(StatisticsType.MONEY, getMoneyStatistics(text, inputLocale));
