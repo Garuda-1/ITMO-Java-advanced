@@ -34,7 +34,7 @@ public class TextStatisticsTest extends Assert {
 
     private void validateStatistics(
             final Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics,
-            final String testName) {
+            final String testName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         ResourceBundle bundle = ResourceBundle
                 .getBundle("ru.ifmo.rain.dolzhanskii.i18n.test.resources." + testName, locale);
@@ -59,13 +59,14 @@ public class TextStatisticsTest extends Assert {
                         // Ignored.
                     }
                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
+                    throw e;
                 }
             }
         }
     }
 
-    private void testRoutine(final String testName) throws IOException {
+    private void testRoutine(final String testName) throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
         final String text = FileUtils.readResourceFile(TextStatisticsTest.class, testName + "_" +
                 locale.getLanguage() + "_" + locale.getCountry() + ".txt");
         final Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics
@@ -75,31 +76,43 @@ public class TextStatisticsTest extends Assert {
 
     @Test
     @DisplayName("Simple test")
-    public void simpleTest() throws IOException {
+    public void simpleTest() throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
         testRoutine("simple");
     }
 
     @Test
     @DisplayName("Poem test")
-    public void poemTest() throws IOException {
+    public void poemTest() throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
         testRoutine("poem");
     }
 
     @Test
     @DisplayName("Biography test")
-    public void biographyTest() throws IOException {
+    public void biographyTest() throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
         testRoutine("biography");
     }
 
     @Test
     @DisplayName("Dates test")
-    public void datesTest() throws IOException {
+    public void datesTest() throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
         testRoutine("dates");
     }
 
     @Test
     @DisplayName("Numerical test")
-    public void numericalTest() throws IOException {
+    public void numericalTest() throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
         testRoutine("numerical");
+    }
+
+    @Test
+    @DisplayName("Corners")
+    public void cornersTest() throws IOException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
+        testRoutine("corners");
     }
 }

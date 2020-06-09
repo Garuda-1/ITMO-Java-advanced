@@ -2,7 +2,6 @@ package ru.ifmo.rain.dolzhanskii.i18n;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -135,37 +134,5 @@ public class FileUtils {
                 generatedSections.get(3),
                 generatedSections.get(4),
                 generatedSections.get(5));
-    }
-
-    public static void printStats(Map<TextStatistics.StatisticsType, TextStatistics.StatisticsData<?>> statistics) throws IllegalAccessException {
-        for (TextStatistics.StatisticsType type : TextStatistics.StatisticsType.values()) {
-            final TextStatistics.StatisticsData<?> data = statistics.get(type);
-            final Field[] fields = data.getClass().getDeclaredFields();
-            for (Field field : fields) {
-                if (field.getName().equals("type")) {
-                    continue;
-                }
-                field.setAccessible(true);
-                Object contents = field.get(data);
-                final String contentsStr;
-                if (contents == null) {
-                    contentsStr = "null";
-                } else {
-                    contentsStr = contents.toString();
-                }
-                final String fieldStr = type.toString().toLowerCase() + "_" +
-                        field.getName() + " = " + contentsStr;
-                final StringBuilder builder = new StringBuilder();
-                for (char c : fieldStr.toCharArray()) {
-                    if (c == '\n') {
-                        builder.append("\\n");
-                    } else {
-                        builder.append(c);
-                    }
-                }
-                System.out.println(builder.toString());
-            }
-            System.out.println();
-        }
     }
 }

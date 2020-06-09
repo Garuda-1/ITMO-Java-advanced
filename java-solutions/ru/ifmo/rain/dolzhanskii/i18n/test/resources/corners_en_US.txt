@@ -1,0 +1,6 @@
+Date in the end: June 6, 1992. Date in the end: 06/06/1992. Date in the end: Saturday, June 6, 1992.
+June 6, 1992 - date in the front. 06/06/1992 - date in the front. Saturday, June 6, 1992 - date in the front.
+Date (June 6, 1992) in the middle. Date (06/06/1992) in the middle. Date (Saturday, June 6, 1992) in the middle.
+Currency in the end: $100. $100 - currency in the front. Currency ($100) in the middle.
+Corrupted date: 06/06/06/06/06/1992. Corrupted date: Thursday, Friday, Saturday, June 6, 1992.
+Corrupted date: Friday, June 6, 1992. Corrupted date: June 6, $1992.

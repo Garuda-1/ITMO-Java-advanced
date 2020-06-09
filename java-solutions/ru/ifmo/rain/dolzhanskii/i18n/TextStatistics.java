@@ -100,27 +100,6 @@ public class TextStatistics {
             return type;
         }
 
-        private Format getAppropriateFormat(final Locale locale, boolean isNumeric) {
-            if (isNumeric) {
-                Format format = NumberFormat.getNumberInstance(locale);
-                ((DecimalFormat) format).applyPattern("#0.###");
-                return format;
-            }
-            switch (type) {
-                case NUMBER:
-                    return NumberFormat.getNumberInstance(locale);
-
-                case MONEY:
-                    return NumberFormat.getCurrencyInstance(locale);
-
-                case DATE:
-                    return DateFormat.getDateInstance(DateFormat.SHORT, locale);
-
-                default:
-                    return null;
-            }
-        }
-
         public int getCountTotal() {
             return countTotal;
         }
@@ -169,9 +148,11 @@ public class TextStatistics {
         final List<String> samples = new ArrayList<>();
         for (int start = breakIterator.first(), end = breakIterator.next(); end != BreakIterator.DONE;
              start = end, end = breakIterator.next()) {
-            final String sample = text.substring(start, end);
+            final String sample = text.substring(start, end).trim();
             if (filter.test(sample)) {
-                samples.add(type == StatisticsType.WORD ? sample.toLowerCase().trim() : sample.trim());
+                if (!sample.isEmpty()) {
+                    samples.add(type == StatisticsType.WORD ? sample.toLowerCase() : sample);
+                }
             }
         }
         return StatisticsData.calculateStringStatistics(type, samples, locale);
@@ -271,7 +252,7 @@ public class TextStatistics {
                 s -> true);
         putStringStatistics(map, StatisticsType.LINE, BreakIterator::getLineInstance, text, inputLocale, s -> true);
         putStringStatistics(map, StatisticsType.WORD, BreakIterator::getWordInstance, text, inputLocale,
-                s -> Character.isLetter(s.charAt(0)));
+                s -> !s.isEmpty() && Character.isLetter(s.charAt(0)));
 
         map.put(StatisticsType.NUMBER, getNumberStatistics(text, inputLocale));
         map.put(StatisticsType.MONEY, getMoneyStatistics(text, inputLocale));
