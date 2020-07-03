@@ -277,7 +277,7 @@ Solution location: [```ru.ifmo.rain.dolzhanskii.i18n```](https://github.com/Garu
 
 ## Disclaimer
 
-This repository is public due to educational purposes. You are not allowed to copy any source code from it. 
+This repository is public due to educational purposes. Note that it is under an appropriate license. You are not allowed to copy this code unless mentioning its author. 
 
 **Warning to ITMO students currently or in future attending Java advanced course.**
 
