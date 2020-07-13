@@ -120,7 +120,7 @@ Develop class ```IterativeParallelism```, processing lists in multiple threads.
 
 Solution location: [```ru.ifmo.rain.dolzhanskii.concurrent```](https://github.com/Garuda-1/java-advanced-2020-solutions/tree/master/java-solutions/ru/ifmo/rain/dolzhanskii/concurrent)
     
-### 8. Basic parallel computing: **Parallel mapper*
+### 8. Basic parallel computing: **Parallel mapper**
 
 1. Develop class ```ParallelMapperImpl```, implementing ```ParallelMapper``` interface.
 
